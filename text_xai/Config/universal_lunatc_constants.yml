@@ -1,0 +1,21 @@
+base_path: '../../data/toxic/toxic'   # the base path for the data, model, results, etc.
+ATTACKED_INDICES: [1, 4, 5, 13, 51, 58, 61, 64, 78, 87, 93, 109, 2, 17, 35, 40, 45, 47, 52, 70, 71, 73, 79, 82, 84, 91, 97, 100, 115, 119, 121, 122, 124]  # a list of the indices of the dataset to attack
+ENV_TYPE: 'Synonym'  # Environment type - from ['Synonym', 'SynonymDelete', 'SynonymMisspell']
+ATTACK_TYPE: 'universal'  # attack each text individually or by learning all text together - from ['universal', 'individual']
+DEVICE: 'cuda'  # which device to use
+AGENT_TYPE: 'relax'  # agent used to attack ['relax', 'search']
+MODEL_TYPE: 'e2e'  # attacked model type end-to-end transfer learning of BERT or sentence embedding transfer learning of BERT ['e2e', 'transfer']
+NUM_EPISODES: 33000  # number of episodes to "play" for each text if attacking individually, or altogether else
+EARLY_STOPPING:   # the reward above which the attack stops, leave empty for no early_Stopping. when aiming for any attack, and not the best this speeds things up dramatically
+ENTROPY_ALPHA : 1.0  # the weighting for the entropy loss
+MAX_SENT_LEN: 100  # the maximum sentence length, which influences the number of actions. ignored if attacking individually
+UPDATE_GLOBAL_ITER: 10  # every how many agent steps to calculate loss and update
+GAMMA: 1.0  # the decay parameter for the A3C loss
+MAX_TURNS: 30  # max number of turns the agent gets
+STATE_SHAPE: 768  # the size of the agent state representation
+LEARNING_RATE: 0.0005  # the learning rate for the a3c agent
+NUM_WORKERS: 4  # number of parallel workers for agents (use 'cpu_count' if you want to use all CPUs)
+NORMALISE_ROUNDS: 'offline'  # number of samples to see for state normalising parameters, -1 means no normalising, 'offline' means offline normalising (Which is not supported for individual attacks)
+SYNC_UPDATE: True  # if true the update for the agent is preformed synchronously for all workers (like in A2C)
+SYNC_START: False  # if true the running of the different workers for ReLAX is started simultaneously to avoid one starting before the others spawned (slower but better randomisation)
+CALCULATE_ORACLE_USE:  False  # Whether to calculate oracle usage (by writing visited stated to files)

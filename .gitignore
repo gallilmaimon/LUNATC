@@ -1,0 +1,21 @@
+# resources
+resources/*
+!resources/word_vectors
+resources/word_vectors/*
+!resources/word_vectors/format_wordvectors.ipynb
+
+# data
+data/*
+!data/preprocess data.ipynb
+
+# pycache + pycharm + notebook checkpoints
+**/__pycache__
+.idea/*
+*.ipynb_checkpoints
+
+# images
+*.png
+*.PNG
+
+# playground notebook
+nlp_playground.ipynb
