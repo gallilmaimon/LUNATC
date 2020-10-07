@@ -1,12 +1,12 @@
 # imports
 import numpy as np
-from text_xai.TextModels.TextModel import TextModel
+from src.TextModels.TextModel import TextModel
 
 # bert
 import torch
 from pytorch_pretrained_bert import BertModel
 from transformers import BertForSequenceClassification, BertTokenizer  # , BertModel
-from text_xai.TextModels.text_model_utils import embed_sentence_mean_layer11, pad_sequences
+from src.TextModels.text_model_utils import embed_sentence_mean_layer11, pad_sequences
 
 
 class E2EBertTextModel(TextModel):

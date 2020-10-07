@@ -1,7 +1,7 @@
 # imports
 import numpy as np
 
-from text_xai.TextModels.TextModel import TextModel
+from src.TextModels.TextModel import TextModel
 
 # net
 import torch.nn as nn
@@ -10,7 +10,7 @@ import torch.nn.functional as F
 # bert
 import torch
 from pytorch_pretrained_bert import BertTokenizer, BertModel
-from text_xai.TextModels.text_model_utils import embed_sentence_mean_layer11
+from src.TextModels.text_model_utils import embed_sentence_mean_layer11
 
 
 class ClassificationHead(nn.Module):

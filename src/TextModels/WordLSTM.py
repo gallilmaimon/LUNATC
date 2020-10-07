@@ -1,7 +1,7 @@
 # imports
 import numpy as np
 from collections import defaultdict
-from text_xai.TextModels.TextModel import TextModel
+from src.TextModels.TextModel import TextModel
 import os 
 
 # net
@@ -10,9 +10,9 @@ import torch.nn as nn
 # bert
 import torch
 from pytorch_pretrained_bert import BertTokenizer, BertModel
-from text_xai.TextModels.text_model_utils import embed_sentence_mean_layer11, glove_tokenify, load_embedding
+from src.TextModels.text_model_utils import embed_sentence_mean_layer11, glove_tokenify, load_embedding
 
-LIB_DIR = os.path.abspath(__file__).split('text_xai')[0]
+LIB_DIR = os.path.abspath(__file__).split('src')[0]
 VOCAB_SIZE = 399999 + 2  # number of Glove words + 2 special tokens (padding + out of vocabulary)
 EMBEDDING_SIZE = 200  # glove embedding size
 

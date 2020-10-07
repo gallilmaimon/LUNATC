@@ -2,12 +2,12 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from copy import deepcopy
-from text_xai.TextModels.TextModel import TextModel
-from text_xai.TextModels.TransferBert import TransferBertTextModel
-from text_xai.TextModels.WordLSTM import WordLSTM
-from text_xai.TextModels.E2EBert import E2EBertTextModel
-from text_xai.Environments.utils.action_utils import replace_with_synonym, get_similarity, replace_with_synonym_greedy, possible_actions
-from text_xai.Config.Config import Config
+from src.TextModels.TextModel import TextModel
+from src.TextModels.TransferBert import TransferBertTextModel
+from src.TextModels.WordLSTM import WordLSTM
+from src.TextModels.E2EBert import E2EBertTextModel
+from src.Environments.utils.action_utils import replace_with_synonym, get_similarity, replace_with_synonym_greedy, possible_actions
+from src.Config.Config import Config
 
 
 def rank_word_importance(sent: str, text_model: TextModel) -> list:

@@ -22,7 +22,7 @@ import nlpaug.model.char as nmc
 import nlpaug.model.word_dict as nmwd
 import random
 
-LIB_DIR = os.path.abspath(__file__).split('text_xai')[0]
+LIB_DIR = os.path.abspath(__file__).split('src')[0]
 
 # region Constants ###################
 # the Universal Sentence Encoder's TF Hub module

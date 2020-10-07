@@ -3,16 +3,16 @@ import numpy as np
 import os
 from torch import multiprocessing as mp
 
-from text_xai.Agents.utils.utils import record
-from text_xai.Environments.SynonymEnvironment import SynonymEnvironment
-from text_xai.Environments.SynonymDeleteEnvironment import SynonymDeleteEnvironment
-from text_xai.Environments.SynonymMisspellEnvironement import SynonymMisspellEnvironment
-from text_xai.Config.Config import Config
+from src.Agents.utils.utils import record
+from src.Environments.SynonymEnvironment import SynonymEnvironment
+from src.Environments.SynonymDeleteEnvironment import SynonymDeleteEnvironment
+from src.Environments.SynonymMisspellEnvironement import SynonymMisspellEnvironment
+from src.Config.Config import Config
 
 
 # region constants
-LIB_DIR = os.path.abspath(__file__).split('text_xai')[0]
-cfg = Config(LIB_DIR + "text_xai/Config/constants.yml")
+LIB_DIR = os.path.abspath(__file__).split('src')[0]
+cfg = Config(LIB_DIR + "src/Config/constants.yml")
 base_path = cfg.params["base_path"]
 # endregion constants
 

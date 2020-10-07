@@ -21,5 +21,5 @@ class Config(metaclass=Singleton):
                 self.params = None
         
         # make path absolute
-        LIB_DIR = os.path.abspath(__file__).split('text_xai')[0]
+        LIB_DIR = os.path.abspath(__file__).split('src')[0]
         self.params["base_path"] = LIB_DIR + 'data' + self.params["base_path"].split('data')[-1]

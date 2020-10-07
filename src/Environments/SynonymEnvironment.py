@@ -1,9 +1,9 @@
 # imports
 import numpy as np
 from copy import deepcopy as copy
-from text_xai.Environments.utils.action_utils import get_similarity, replace_with_synonym, possible_actions
+from src.Environments.utils.action_utils import get_similarity, replace_with_synonym, possible_actions
 
-from text_xai.Environments.Environment import Environment
+from src.Environments.Environment import Environment
 
 
 class SynonymEnvironment(Environment):

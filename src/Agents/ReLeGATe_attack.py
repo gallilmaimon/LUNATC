@@ -4,7 +4,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 
 # add base path so that can import other files from project
 import sys
-LIB_DIR = os.path.abspath(__file__).split('text_xai')[0]
+LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
 # general
@@ -17,21 +17,21 @@ import shutil
 
 # agent
 import torch.multiprocessing as mp
-from text_xai.Agents.utils.shared_adam import SharedAdam
-from text_xai.Agents.ReLeGATeAgent import ReLeGATeAgentNet, ReLeGATeAgentWorker, Normalizer
-from text_xai.Agents.SearchAgent import SearchAgentWorker
+from src.Agents.utils.shared_adam import SharedAdam
+from src.Agents.ReLeGATeAgent import ReLeGATeAgentNet, ReLeGATeAgentWorker, Normalizer
+from src.Agents.SearchAgent import SearchAgentWorker
 
 # environment & language model
-from text_xai.TextModels.E2EBert import E2EBertTextModel
-from text_xai.TextModels.TransferBert import TransferBertTextModel
-from text_xai.TextModels.WordLSTM import WordLSTM
+from src.TextModels.E2EBert import E2EBertTextModel
+from src.TextModels.TransferBert import TransferBertTextModel
+from src.TextModels.WordLSTM import WordLSTM
 
 # configuration
-from text_xai.Config.Config import Config
+from src.Config.Config import Config
 # endregion imports
 
 # region constants
-cfg = Config(LIB_DIR + "text_xai/Config/constants.yml")
+cfg = Config(LIB_DIR + "src/Config/constants.yml")
 base_path = cfg.params["base_path"]
 # endregion constants
 
@@ -75,7 +75,7 @@ def attack_individually(model_type: str = "e2e", agent_type: str = "relegate", d
 
     # make experiment results directory & save config
     os.makedirs(f'{base_path}_{agent_type}_results', exist_ok=True)
-    shutil.copyfile(LIB_DIR + "text_xai/Config/constants.yml", f'{base_path}_{agent_type}_results/constants.yml')
+    shutil.copyfile(LIB_DIR + "src/Config/constants.yml", f'{base_path}_{agent_type}_results/constants.yml')
 
     print(len(df))
     for n in cfg.params['ATTACKED_INDICES']:
@@ -216,7 +216,7 @@ def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", age
 
     # make experiment results directory & save config
     os.makedirs(f'{base_path}_{agent_type}_results/train/{epoch}', exist_ok=True)
-    shutil.copyfile(LIB_DIR + "text_xai/Config/constants.yml",
+    shutil.copyfile(LIB_DIR + "src/Config/constants.yml",
                     f'{base_path}_{agent_type}_results/train/{epoch}/constants.yml')
 
     # barrier used to make sure all workers start at the same time, despite slow spawn
@@ -303,7 +303,7 @@ def attack_with_pretrained(model_path, epoch=0, model_type: str = "e2e", agent_t
 
     # make experiment results directory & save config
     os.makedirs(f'{base_path}_{agent_type}_results', exist_ok=True)
-    shutil.copyfile(LIB_DIR + "text_xai/Config/constants.yml", f'{base_path}_{agent_type}_results/constants.yml')
+    shutil.copyfile(LIB_DIR + "src/Config/constants.yml", f'{base_path}_{agent_type}_results/constants.yml')
 
     for n in [2, 12, 19, 24, 41, 67, 78, 83, 88, 92]:  # [2, 12, 19, 24, 41]:  # range(1):
         # get current sentence

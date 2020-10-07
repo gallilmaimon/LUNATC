@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from text_xai.Environments.utils.action_utils import get_similarity
+from src.Environments.utils.action_utils import get_similarity
 
 
 class Environment(ABC):

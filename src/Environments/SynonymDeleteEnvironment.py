@@ -1,13 +1,12 @@
 # imports
-import time
 import numpy as np
 from copy import deepcopy as copy
-from text_xai.Environments.utils.action_utils import get_similarity, replace_with_synonym, possible_actions, misspell
+from src.Environments.utils.action_utils import get_similarity, replace_with_synonym, possible_actions, remove_word
 
-from text_xai.Environments.Environment import Environment
+from src.Environments.Environment import Environment
 
 
-class SynonymMisspellEnvironment(Environment):
+class SynonymDeleteEnvironment(Environment):
     """
     an Environment for A3C agent which also adds to state representation the initial/target class
     to help the model generalise between different sentences.
@@ -36,7 +35,7 @@ class SynonymMisspellEnvironment(Environment):
             return replace_with_synonym(s, a, self.sess)
         # remove word
         elif a >= self.max_sent_len:
-            return misspell(s, a-self.max_sent_len)
+            return remove_word(s, a-self.max_sent_len)
 
     def step(self, a):
         # if agent chooses illegal move - negative reward , no change in state
@@ -46,7 +45,7 @@ class SynonymMisspellEnvironment(Environment):
             return embedded_state, -0.001, self.turn >= self.max_turns, embedded_state
 
         r, done, new_s = self.r(a)
-        self.legal_moves.remove(a)
+        self.legal_moves = possible_actions(new_s) + list(range(self.max_sent_len, 2 * self.max_sent_len))
         self.turn += 1
 
         # limit number of turns in round

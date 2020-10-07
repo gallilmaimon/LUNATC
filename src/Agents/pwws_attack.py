@@ -2,15 +2,15 @@ import numpy as np
 import pandas as pd
 from copy import deepcopy
 
-from text_xai.Agents.utils.pwws_utils import nlp, get_synonym_options, get_named_entity_replacements, \
+from src.Agents.utils.pwws_utils import nlp, get_synonym_options, get_named_entity_replacements, \
     calculate_word_saliency, delta_p_star
 
 import tensorflow as tf
-from text_xai.TextModels.TransferBert import TransferBertTextModel
-from text_xai.TextModels.E2EBert import E2EBertTextModel
-from text_xai.TextModels.WordLSTM import WordLSTM
-from text_xai.Environments.utils.action_utils import get_similarity
-from text_xai.Config.Config import Config
+from src.TextModels.TransferBert import TransferBertTextModel
+from src.TextModels.E2EBert import E2EBertTextModel
+from src.TextModels.WordLSTM import WordLSTM
+from src.Environments.utils.action_utils import get_similarity
+from src.Config.Config import Config
 
 
 def pwws_attack_text(text: str, text_model, sess, dataset: str, use_ne: bool = False):
