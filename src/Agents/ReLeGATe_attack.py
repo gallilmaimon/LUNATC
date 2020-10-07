@@ -38,8 +38,8 @@ base_path = cfg.params["base_path"]
 
 def attack_individually(model_type: str = "e2e", agent_type: str = "relegate", device: str = "cpu"):
     """
-    this function preforms the attack on each sentence individually - by retraining the model from scratch each time.
-    the different paramaters are read from the constants at the top of the file
+    this function performs the attack on each sentence individually - by retraining the model from scratch each time.
+    the different parameters are read from the constants at the top of the file
     """
     # check model type and agent type
     assert model_type in ["e2e", "transfer", 'lstm'] and agent_type in ["relegate", "search"], \
@@ -140,6 +140,7 @@ def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", age
     env_type = cfg.params["ENV_TYPE"]
     num_workers = mp.cpu_count() if cfg.params["NUM_WORKERS"] == 'cpu_count' else cfg.params["NUM_WORKERS"]
     offline_normalising = True if norm_rounds == 'offline' else False
+    sync_update = cfg.params["SYNC_UPDATE"]
 
     assert model_type in ["e2e", "transfer", 'lstm'] and agent_type in ["relegate", "search"], \
         "model type or agent type unrecognised or unsupported!"
@@ -226,12 +227,11 @@ def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", age
         b = mp.Barrier(parties=num_workers)
 
     # for A2C synced version
-    sync_barrier = mp.Barrier(parties=num_workers)
-    sync_lock = mp.Lock()
-    sync_event = mp.Event()
-    v_target_queue = mp.Queue()
-    a_queue = mp.Queue()
-    s_queue = mp.Queue()
+    sync_barrier = mp.Barrier(parties=num_workers) if sync_update else None
+    sync_event = mp.Event() if sync_update else None
+    v_target_queue = mp.Queue() if sync_update else None
+    a_queue = mp.Queue() if sync_update else None
+    s_queue = mp.Queue() if sync_update else None
 
     # agent init - training only really makes sense with A3C
     if agent_type == "relegate":
