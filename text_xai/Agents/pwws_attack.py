@@ -96,4 +96,7 @@ if __name__ == '__main__':
 
     print(df.head())
     # save results
-    df.to_csv(base_path + '_pwws.csv', index=False)
+    out_name = '_pwws'
+    out_name += model_type
+    out_name += '_noNE' if not USE_NE else ''
+    df.to_csv(base_path + out_name + '.csv', index=False)

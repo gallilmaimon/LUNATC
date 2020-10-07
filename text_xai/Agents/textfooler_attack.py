@@ -76,5 +76,5 @@ if __name__ == '__main__':
 
     print(df.head())
     # save results
-    df.to_csv(base_path + '_mit_lstm.csv', index=False)
+    df.to_csv(base_path + f'_mit_{model_type}.csv', index=False)
 
