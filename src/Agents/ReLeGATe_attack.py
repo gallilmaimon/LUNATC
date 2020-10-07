@@ -18,8 +18,11 @@ import shutil
 # agent
 import torch.multiprocessing as mp
 from src.Agents.utils.shared_adam import SharedAdam
-from src.Agents.ReLeGATeAgent import ReLeGATeAgentNet, ReLeGATeAgentWorker, Normalizer
+from src.Agents.ReLeGATeAgent import ReLeGATeAgentNet, ReLeGATeAgentWorker
 from src.Agents.SearchAgent import SearchAgentWorker
+
+# normalizer
+from src.Agents.Normalizers.norm_utils import get_normaliser
 
 # environment & language model
 from src.TextModels.E2EBert import E2EBertTextModel
@@ -53,6 +56,7 @@ def attack_individually(model_type: str = "e2e", agent_type: str = "relegate", d
     env_type = cfg.params["ENV_TYPE"]
     sync_start = cfg.params["SYNC_START"]
     num_workers = mp.cpu_count() if cfg.params["NUM_WORKERS"] == 'cpu_count' else cfg.params["NUM_WORKERS"]
+    offline_normalising = True if norm_rounds == 'offline' else False
 
     # load data
     data_path = base_path + '_sample.csv'
@@ -68,7 +72,7 @@ def attack_individually(model_type: str = "e2e", agent_type: str = "relegate", d
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
 
     # multiproccessing lock used for normalisation
-    norm_lock = mp.Lock() if norm_rounds != -1 else None
+    norm_lock = mp.Lock() if norm_rounds not in [-1, 'offline'] else None
 
     # barrier used to make sure all workers start at the same time, despite slow spawn (slower but better randomisation)
     b = mp.Barrier(parties=num_workers) if sync_start else None
@@ -100,11 +104,15 @@ def attack_individually(model_type: str = "e2e", agent_type: str = "relegate", d
             print("Unsupported environment type!")
             exit(1)
 
-        # define shared network, optimiser and params
-        norm = None
-        if norm_rounds != -1:
-            norm = Normalizer(state_shape, norm_rounds)
-        gnet = ReLeGATeAgentNet(state_shape, num_actions, norm=norm, lock=norm_lock)  # global network
+        # define shared network, optimiser, normaliser and params
+        # normaliser
+        norm_states = None
+        if offline_normalising:  # If using offline normalising with the initial states
+            norm_states = np.empty((len(cur_df), 768))
+            for j, text in enumerate(sent_list):
+                norm_states[j] = text_model.embed(text).cpu()  # todo: make more efficient with batch processing
+        norm = get_normaliser(state_shape, norm_rounds, norm_states, norm_lock=norm_lock) if norm_rounds != -1 else None
+        gnet = ReLeGATeAgentNet(state_shape, num_actions, norm=norm)  # global network
         gnet.share_memory()  # share the global parameters in multiprocessing
         opt = SharedAdam(gnet.parameters(), lr=lr)  # global optimizer
         # global_ep, res_queue = mp.Value('i', 0), mp.Queue()
@@ -145,6 +153,7 @@ def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", age
     assert model_type in ["e2e", "transfer", 'lstm'] and agent_type in ["relegate", "search"], \
         "model type or agent type unrecognised or unsupported!"
 
+    num_actions = 0
     if env_type == 'Synonym':
         num_actions = max_sent_len
     elif env_type == 'SynonymDelete':
@@ -152,19 +161,6 @@ def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", age
     else:
         print("Unsupported environment type!")
         exit(1)
-
-    norm = None
-    if norm_rounds != -1 and norm_rounds != 'offline':
-        norm = Normalizer(state_shape, norm_rounds)
-
-    if epoch != 0:
-        with open(f'{base_path}_normaliser.pkl', 'rb') as f:
-            norm = pickle.load(f)
-
-    # multiproccessing lock used for normalisation
-    norm_lock = None
-    if norm_rounds != -1:
-        norm_lock = mp.Lock()
 
     # generate data
     data_path = base_path + '_sample.csv'
@@ -182,19 +178,22 @@ def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", age
     elif model_type == "e2e":
         text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
 
-    # for offline normalising using initial states statistics
-    if offline_normalising:
-        init_states = np.empty((len(df), 768))
-        norm = Normalizer(state_shape, -1)
-        for j in range(len(df)):
-            init_states[j] = text_model.embed(df.content.values[j]).cpu()  # todo: make more efficient with batch processing
-        norm_mean = init_states.mean(axis=0)
-        norm_var = init_states.var(axis=0)
+    # normaliser
+    norm_states = None
+    if offline_normalising:  # If using offline normalising with the initial states
+        norm_states = np.empty((len(df), 768))
+        for j, text in enumerate(sent_list):
+            norm_states[j] = text_model.embed(text).cpu()  # todo: make more efficient with batch processing
 
-        norm.mean = torch.Tensor(norm_mean)
-        norm.var = torch.Tensor(norm_var)
+    # multi-processing lock used for normalisation
+    norm_lock = mp.Lock() if norm_rounds not in [-1, 'offline'] else None
+    norm = get_normaliser(state_shape, norm_rounds, norm_states, norm_lock) if norm_rounds != -1 else None
 
-    gnet = ReLeGATeAgentNet(state_shape, num_actions, norm, norm_lock)  # global network
+    if epoch != 0:
+        with open(f'{base_path}_normaliser.pkl', 'rb') as f:
+            norm = pickle.load(f)
+
+    gnet = ReLeGATeAgentNet(state_shape, num_actions, norm)  # global network
 
     # parallel training
     print('num workers: ', num_workers)
