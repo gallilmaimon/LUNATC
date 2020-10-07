@@ -13,13 +13,13 @@ from text_xai.Environments.utils.action_utils import get_similarity
 from text_xai.Config.Config import Config
 
 
-def pwws_attack_text(text: str, lang_model, sess, dataset: str, use_ne: bool = False):
+def pwws_attack_text(text: str, text_model, sess, dataset: str, use_ne: bool = False):
     doc = nlp(text)  # use spacy to calculate POS, named entities etc.
-    orig_pred = np.argmax(lang_model.predict_proba(text)[0])
+    orig_pred = np.argmax(text_model.predict_proba(text)[0])
 
     words = [tok.text for tok in doc]
     oracle_usage = len(words)
-    word_saliency = calculate_word_saliency(lang_model, deepcopy(words))
+    word_saliency = calculate_word_saliency(text_model, deepcopy(words))
     substitute_options = []  # contains a list of tuples (ind, replacement_word, score)
 
     NE_options = get_named_entity_replacements()[dataset][orig_pred] if use_ne else ''
@@ -38,7 +38,7 @@ def pwws_attack_text(text: str, lang_model, sess, dataset: str, use_ne: bool = F
             continue
 
         oracle_usage += len(rep_options)
-        sub, delta_p = delta_p_star(lang_model, deepcopy(words), i, rep_options)
+        sub, delta_p = delta_p_star(text_model, deepcopy(words), i, rep_options)
         substitute_options.append((i, sub, delta_p*word_saliency[i]))
 
     sorted_substitutes = sorted(substitute_options, key=lambda t: t[2], reverse=True)
@@ -47,7 +47,7 @@ def pwws_attack_text(text: str, lang_model, sess, dataset: str, use_ne: bool = F
     for (i, sub, _) in sorted_substitutes:
         words[i] = sub.lower()
         cur_sent = ' '.join(words)
-        if lang_model.predict(cur_sent)[0] != orig_pred:
+        if text_model.predict(cur_sent)[0] != orig_pred:
             return cur_sent, get_similarity([text, cur_sent], sess)[0], oracle_usage
 
     return ' '.join(words), 0, oracle_usage

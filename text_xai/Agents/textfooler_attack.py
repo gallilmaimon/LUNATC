@@ -10,25 +10,25 @@ from text_xai.Environments.utils.action_utils import replace_with_synonym, get_s
 from text_xai.Config.Config import Config
 
 
-def rank_word_importance(sent: str, lang_model: TextModel) -> list:
+def rank_word_importance(sent: str, text_model: TextModel) -> list:
     words = sent.split()
-    orig_probs = lang_model.predict_proba(sent)[0]
+    orig_probs = text_model.predict_proba(sent)[0]
     orig_pred = np.argmax(orig_probs)
     orig_prob = orig_probs[orig_pred]
     new_sents = [' '.join(words[:i] + ['<oov>'] + words[i+1:]) for i in range(len(words))]
-    new_probs = [orig_prob - lang_model.predict_proba(new_sent)[0][orig_pred] for new_sent in new_sents]
+    new_probs = [orig_prob - text_model.predict_proba(new_sent)[0][orig_pred] for new_sent in new_sents]
     return list(reversed(np.argsort(new_probs)))
 
 
-def attack_sent(sent: str, lang_model: TextModel, max_turns: int, sess: tf.Session):
-    word_importance = rank_word_importance(sent, lang_model)
-    orig_pred = np.argmax(lang_model.predict_proba(sent)[0])
+def attack_sent(sent: str, text_model: TextModel, max_turns: int, sess: tf.Session):
+    word_importance = rank_word_importance(sent, text_model)
+    orig_pred = np.argmax(text_model.predict_proba(sent)[0])
     legal_actions = possible_actions(sent)
     word_importance = [w for w in word_importance if w in legal_actions]
     cur_sent = deepcopy(sent)
     for word_index in word_importance:
         cur_sent = replace_with_synonym(cur_sent, word_index, sess)
-        if lang_model.predict(cur_sent)[0] != orig_pred:
+        if text_model.predict(cur_sent)[0] != orig_pred:
             return cur_sent, get_similarity([sent, cur_sent], sess)[0]
 
     return cur_sent, 0

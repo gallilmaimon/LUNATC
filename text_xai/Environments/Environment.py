@@ -5,8 +5,8 @@ from text_xai.Environments.utils.action_utils import get_similarity
 
 class Environment(ABC):
     @abstractmethod
-    def __init__(self, max_sent_len, sent_list, sess, init_sentence=None, lang_model=None, max_turns=30):
-        self.lang_model = lang_model
+    def __init__(self, max_sent_len, sent_list, sess, init_sentence=None, text_model=None, max_turns=30):
+        self.text_model = text_model
         self.max_sent_len = max_sent_len
         self.history = []
         self.score = None
@@ -37,7 +37,7 @@ class Environment(ABC):
             self.init_sentence = init_sentence
 
         self.state = self.init_sentence
-        self.cur_prob = self.lang_model.predict_proba(self.init_sentence)[0]
+        self.cur_prob = self.text_model.predict_proba(self.init_sentence)[0]
         self.original_class = np.argmax(self.cur_prob)
         self.turn = 0
         return self.get_embedded_state(self.state)
@@ -55,7 +55,7 @@ class Environment(ABC):
         # actions with no effect get negative reward
         if new_s == self.state:
             return -0.0001, False, new_s
-        new_proba = self.lang_model.predict_proba(new_s)[0]
+        new_proba = self.text_model.predict_proba(new_s)[0]
         old_proba = self.cur_prob
 
         # the change in difference between class model outputs - the smaller the difference the closer the model to
@@ -84,4 +84,4 @@ class Environment(ABC):
 
     @abstractmethod
     def get_embedded_state(self, state):
-        return self.lang_model.embed(state).cpu().numpy()[0]
+        return self.text_model.embed(state).cpu().numpy()[0]

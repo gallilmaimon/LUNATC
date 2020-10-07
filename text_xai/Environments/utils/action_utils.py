@@ -453,7 +453,7 @@ def replace_with_synonym_all_text(text, word_index, sess, topn=10, word_sim_thre
     return text
 
 
-def replace_with_synonym_greedy(text, word_index, lang_model, sess, topn=10, word_sim_thresh=0.6,
+def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=10, word_sim_thresh=0.6,
                                 sentence_sim_thresh=0.6, debug=False):
     """
     This function replaces the word at a given word_index (when splitting by spaces), of the given text with a synonym.
@@ -461,7 +461,7 @@ def replace_with_synonym_greedy(text, word_index, lang_model, sess, topn=10, wor
     for Natural Language Attack on Text Classification and Entailment" - https://arxiv.org/abs/1907.11932
     :param text: the original text
     :param word_index: the index of the word to be replaced
-    :param lang_model: the language model being "attacked"
+    :param text_model: the language model being "attacked"
     :param sess: an initialised tensorflow session for runtime efficiency
     :param topn: how many candidates to consider as synonyms
     :param word_sim_thresh: how similar does a candidate synonym need to be in order to be considered
@@ -524,9 +524,9 @@ def replace_with_synonym_greedy(text, word_index, lang_model, sess, topn=10, wor
         sent_options = [i for (i, v) in zip(sent_options, cand_mask) if v]
         print('sent options: ', sent_options) if debug else ''
         sentence_similarity = sentence_similarity[cand_mask]
-        orig_probs = lang_model.predict_proba(text)[0]
+        orig_probs = text_model.predict_proba(text)[0]
         orig_pred = np.argmax(orig_probs)
-        new_probs = [lang_model.predict_proba(new_sent)[0][orig_pred] for new_sent in sent_options]
+        new_probs = [text_model.predict_proba(new_sent)[0][orig_pred] for new_sent in sent_options]
         print('new probs: ', new_probs) if debug else ''
         changed_class = list(map(lambda x: x < 0.5, new_probs))
         if sum(changed_class) >= 1:

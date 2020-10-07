@@ -71,18 +71,18 @@ def get_synonym_options(token):
     return set(synonyms)
 
 
-def calculate_word_saliency(lang_model, words):
-    orig_probs = softmax(lang_model.predict_proba(' '.join(words))[0])
+def calculate_word_saliency(text_model, words):
+    orig_probs = softmax(text_model.predict_proba(' '.join(words))[0])
     orig_pred = np.argmax(orig_probs)
     orig_prob = orig_probs[orig_pred]
     new_sents = [' '.join(words[:i] + ['<oov>'] + words[i + 1:]) for i in range(len(words))]
-    return softmax(np.array([orig_prob - softmax(lang_model.predict_proba(new_sent)[0])[orig_pred]
+    return softmax(np.array([orig_prob - softmax(text_model.predict_proba(new_sent)[0])[orig_pred]
                              for new_sent in new_sents]))
 
 
-def delta_p_star(lang_model, words, i, rep_options):
+def delta_p_star(text_model, words, i, rep_options):
     rep_options = [word if type(word) == str else word.text for word in rep_options]
-    orig_probs = softmax(lang_model.predict_proba(' '.join(words))[0])
+    orig_probs = softmax(text_model.predict_proba(' '.join(words))[0])
     orig_pred = np.argmax(orig_probs)
     orig_prob = orig_probs[orig_pred]
     new_texts = []
@@ -90,7 +90,7 @@ def delta_p_star(lang_model, words, i, rep_options):
         words[i] = word
         new_texts.append(' '.join(words))
 
-    new_probs = np.concatenate([softmax(lang_model.predict_proba(new_text), axis=1)
+    new_probs = np.concatenate([softmax(text_model.predict_proba(new_text), axis=1)
                                 for new_text in new_texts])[:, orig_pred]
     chosen_ind = np.argmin(new_probs)
 

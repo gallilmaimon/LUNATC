@@ -12,8 +12,8 @@ class SynonymEnvironment(Environment):
     to help the model generalise between different sentences.
     an environment which contains only synonyms as possible action
     """
-    def __init__(self, max_sent_len, sent_list, sess, init_sentence=None, lang_model=None, max_turns=30):
-        super().__init__(max_sent_len, sent_list, sess, init_sentence, lang_model, max_turns)
+    def __init__(self, max_sent_len, sent_list, sess, init_sentence=None, text_model=None, max_turns=30):
+        super().__init__(max_sent_len, sent_list, sess, init_sentence, text_model, max_turns)
 
     def reset(self, init_sentence=None):
         embedded_state = super().reset(init_sentence)

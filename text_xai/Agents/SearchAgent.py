@@ -18,7 +18,7 @@ base_path = cfg.params["base_path"]
 
 
 class SearchAgentWorker(mp.Process):
-    def __init__(self, sent_list, global_ep, name, n, lang_model, max_sent_len, num_episodes):
+    def __init__(self, sent_list, global_ep, name, n, text_model, max_sent_len, num_episodes):
         super(SearchAgentWorker, self).__init__()
         self.name = 'w%i' % name
         self.g_ep = global_ep
@@ -29,13 +29,13 @@ class SearchAgentWorker(mp.Process):
 
         if cfg.params["ENV_TYPE"] == 'Synonym':
             self.env = SynonymEnvironment(max_sent_len, sent_list, None, init_sentence=None,
-                                          lang_model=lang_model, max_turns=cfg.params["MAX_TURNS"])
+                                          text_model=text_model, max_turns=cfg.params["MAX_TURNS"])
         elif cfg.params["ENV_TYPE"] == 'SynonymDelete':
             self.env = SynonymDeleteEnvironment(max_sent_len, sent_list, None, init_sentence=None,
-                                                lang_model=lang_model, max_turns=cfg.params["MAX_TURNS"])
+                                                text_model=text_model, max_turns=cfg.params["MAX_TURNS"])
         elif cfg.params["ENV_TYPE"] == 'SynonymMisspell':
             self.env = SynonymMisspellEnvironment(max_sent_len, sent_list, None, init_sentence=None,
-                                                  lang_model=lang_model, max_turns=cfg.params["MAX_TURNS"])
+                                                  text_model=text_model, max_turns=cfg.params["MAX_TURNS"])
         else:
             print("Unsupported ENV_TYPE !")
             exit(1)
