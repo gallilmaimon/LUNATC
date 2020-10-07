@@ -36,14 +36,14 @@ base_path = cfg.params["base_path"]
 # endregion constants
 
 
-def attack_individually(model_type: str = "e2e", agent_type: str = "relax", device: str = "cpu"):
+def attack_individually(model_type: str = "e2e", agent_type: str = "relegate", device: str = "cpu"):
     """
     this function preforms the attack on each sentence individually - by retraining the model from scratch each time.
     the different paramaters are read from the constants at the top of the file
     """
     # check model type and agent type
-    if model_type not in ["e2e", "transfer", 'lstm'] or agent_type not in ["relegate", "search"]:
-        print("model type or agent type unrecognised or unsupported!")
+    assert model_type in ["e2e", "transfer", 'lstm'] and agent_type in ["relegate", "search"], \
+        "model type or agent type unrecognised or unsupported!"
 
     # initialise parameters
     num_rounds = cfg.params["NUM_EPISODES"]
@@ -127,7 +127,7 @@ def attack_individually(model_type: str = "e2e", agent_type: str = "relax", devi
         [w.join() for w in workers]
 
 
-def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", agent_type: str = "relax",
+def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", agent_type: str = "relegate",
                           device: str = "cpu"):
     """this model pretrains a single network on the data given"""
     # initialise parameters
@@ -140,6 +140,9 @@ def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", age
     env_type = cfg.params["ENV_TYPE"]
     num_workers = mp.cpu_count() if cfg.params["NUM_WORKERS"] == 'cpu_count' else cfg.params["NUM_WORKERS"]
     offline_normalising = True if norm_rounds == 'offline' else False
+
+    assert model_type in ["e2e", "transfer", 'lstm'] and agent_type in ["relegate", "search"], \
+        "model type or agent type unrecognised or unsupported!"
 
     if env_type == 'Synonym':
         num_actions = max_sent_len
