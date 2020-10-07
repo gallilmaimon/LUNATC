@@ -15,7 +15,7 @@ MAX_TURNS: 30  # max number of turns the agent gets
 STATE_SHAPE: 768  # the size of the agent state representation
 LEARNING_RATE: 0.0005  # the learning rate for the a3c agent
 NUM_WORKERS: 4  # number of parallel workers for agents (use 'cpu_count' if you want to use all CPUs)
-NORMALISE_ROUNDS: 'offline'  # number of samples to see for state normalising parameters, -1 means no normalising, 'offline' means offline normalising (Which is not supported for individual attacks)
-SYNC_UPDATE: False  # if true the update for the agent is preformed synchronously for all workers (like in A2C)
+NORMALISE_ROUNDS: 10  # number of samples to see for state normalising parameters, -1 means no normalising, 'offline' means offline normalising (Which is not supported for individual attacks)
+SYNC_UPDATE: True  # if true the update for the agent is preformed synchronously for all workers (like in A2C)
 SYNC_START: False  # if true the running of the different workers for ReLAX is started simultaneously to avoid one starting before the others spawned (slower but better randomisation)
 CALCULATE_ORACLE_USE:  False  # Whether to calculate oracle usage (by writing visited stated to files)

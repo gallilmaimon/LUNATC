@@ -55,6 +55,7 @@ def attack_individually(model_type: str = "e2e", agent_type: str = "relegate", d
     norm_rounds = cfg.params["NORMALISE_ROUNDS"]
     env_type = cfg.params["ENV_TYPE"]
     sync_start = cfg.params["SYNC_START"]
+    sync_update = cfg.params["SYNC_UPDATE"]
     num_workers = mp.cpu_count() if cfg.params["NUM_WORKERS"] == 'cpu_count' else cfg.params["NUM_WORKERS"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
@@ -104,7 +105,6 @@ def attack_individually(model_type: str = "e2e", agent_type: str = "relegate", d
             print("Unsupported environment type!")
             exit(1)
 
-        # define shared network, optimiser, normaliser and params
         # normaliser
         norm_states = None
         if offline_normalising:  # If using offline normalising with the initial states
@@ -112,20 +112,29 @@ def attack_individually(model_type: str = "e2e", agent_type: str = "relegate", d
             for j, text in enumerate(sent_list):
                 norm_states[j] = text_model.embed(text).cpu()  # todo: make more efficient with batch processing
         norm = get_normaliser(state_shape, norm_rounds, norm_states, norm_lock=norm_lock) if norm_rounds != -1 else None
+
+        # define shared network, optimiser and params
         gnet = ReLeGATeAgentNet(state_shape, num_actions, norm=norm)  # global network
         gnet.share_memory()  # share the global parameters in multiprocessing
         opt = SharedAdam(gnet.parameters(), lr=lr)  # global optimizer
-        # global_ep, res_queue = mp.Value('i', 0), mp.Queue()
         global_ep = mp.Value('i', 0)
 
         # make results directory
         os.makedirs(f'{base_path}_{agent_type}_results/{n}', exist_ok=True)
 
+        # for A2C synced version
+        sync_barrier = mp.Barrier(parties=num_workers) if sync_update else None
+        sync_event = mp.Event() if sync_update else None
+        v_target_queue = mp.Queue() if sync_update else None
+        a_queue = mp.Queue() if sync_update else None
+        s_queue = mp.Queue() if sync_update else None
+
         # parallel training
         print('num workers: ', num_workers)
         if agent_type == "relegate":
             workers = [ReLeGATeAgentWorker(gnet, opt, sent_list, global_ep, i, n, text_model, sent_len, num_rounds, b,
-                                           train=True)
+                                           train=True, sync_barrier=sync_barrier, sync_event=sync_event,
+                                           v_target_queue=v_target_queue, a_queue=a_queue, s_queue=s_queue)
                        for i in range(num_workers)]
         else:  # defaults to random
             workers = [SearchAgentWorker(sent_list, global_ep, i, n, text_model, sent_len, num_rounds)
