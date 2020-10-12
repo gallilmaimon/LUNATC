@@ -83,7 +83,7 @@ def attack_individually(model_type: str = "e2e", agent_type: str = "relegate", d
     shutil.copyfile(LIB_DIR + "src/Config/constants.yml", f'{base_path}_{agent_type}_results/constants.yml')
 
     print(len(df))
-    for n in cfg.params['ATTACKED_INDICES']:
+    for n in eval(cfg.params['ATTACKED_INDICES']):
         if sync_start:
             b.reset()
 
@@ -175,7 +175,7 @@ def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", age
     data_path = base_path + '_sample.csv'
     df = pd.read_csv(data_path)
     # take smaller subset
-    df = df.iloc[cfg.params['ATTACKED_INDICES']]
+    df = df.iloc[eval(cfg.params['ATTACKED_INDICES'])]
     print(len(df))
     sent_list = list(df.content.values)
     print(sent_list)
@@ -241,7 +241,7 @@ def pretrain_attack_model(epoch=0, model_path=None, model_type: str = "e2e", age
     a_queue = mp.Queue() if sync_update else None
     s_queue = mp.Queue() if sync_update else None
 
-    # agent init - training only really makes sense with A3C
+    # agent init - training only really makes sense with learning agent
     if agent_type == "relegate":
         workers = [ReLeGATeAgentWorker(gnet, opt, sent_list, global_ep, i, 'train', text_model,
                                        max_sent_len, num_rounds, b, epoch=epoch, train=True, sync_barrier=sync_barrier,
