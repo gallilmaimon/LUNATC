@@ -1,21 +1,21 @@
 base_path: '../../data/aclImdb/imdb'   # the base path for the data, model, results, etc.
-ATTACKED_INDICES: '[2, 4, 6, 12, 13, 19, 24, 27,28, 34]'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
+ATTACKED_INDICES: '[2]'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
 ENV_TYPE: 'Synonym'  # Environment type - from ['Synonym', 'SynonymDelete', 'SynonymMisspell']
 ATTACK_TYPE: 'universal'  # attack each text individually or by learning all text together - from ['universal', 'individual']
 DEVICE: 'cuda'  # which device to use
 AGENT_TYPE: 'relegate'  # agent used to attack ['relegate', 'search']
 MODEL_TYPE: 'e2e'  # attacked model type: end-to-end transfer learning of BERT or text embedding transfer learning of BERT, or Word-LSTM ['e2e', 'transfer', 'lstm']
-NUM_EPISODES: 25000  # number of episodes to "play" for each text if attacking individually, or altogether else
+BATCH_SIZE: 256   # number of transitions to sample for training the agent at each step
+NUM_EPISODES: 1000  # number of episodes to "play" for each text if attacking individually, or altogether else
 EARLY_STOPPING:   # the reward above which the attack stops, leave empty for no early_Stopping. when aiming for any attack, and not the best this speeds things up dramatically
-ENTROPY_ALPHA : 1.0  # the weighting for the entropy loss
 MAX_SENT_LEN: 100  # the maximum sentence length, which influences the number of actions. ignored if attacking individually
-UPDATE_GLOBAL_ITER: 10  # every how many agent steps to calculate loss and update
+TARGET_UPDATE: 10  # every how many agent episodes to update the target network
 GAMMA: 1.0  # the decay parameter for the A3C loss
+EPS_START: 0.9  # the initial epsilon for epsilon-greedy exploration
+EPS_END: 0.05  # the minimal epsilon for epsilon-greedy exploration
+EPS_DECAY: 1000  # the decay parameter for epsilon according to the equation: EPS_END + (EPS_START - EPS_END) * exp(-1. * steps_done / EPS_DECAY)
 MAX_TURNS: 30  # max number of turns the agent gets
 STATE_SHAPE: 768  # the size of the agent state representation
 LEARNING_RATE: 0.0005  # the learning rate for the a3c agent
-NUM_WORKERS: 4  # number of parallel workers for agents (use 'cpu_count' if you want to use all CPUs)
 NORMALISE_ROUNDS: 'offline'  # number of samples to see for state normalising parameters, -1 means no normalising, 'offline' means offline normalising (Which is not supported for individual attacks)
-SYNC_UPDATE: True  # if true the update for the agent is preformed synchronously for all workers (like in A2C)
-SYNC_START: False  # if true the running of the different workers for ReLAX is started simultaneously to avoid one starting before the others spawned (slower but better randomisation)
 CALCULATE_ORACLE_USE:  False  # Whether to calculate oracle usage (by writing visited stated to files)
