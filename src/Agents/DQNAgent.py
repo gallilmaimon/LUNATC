@@ -45,7 +45,7 @@ class DQNNet(nn.Module):
 
 
 class DQNAgent:
-    def __init__(self, sent_list, text_model, norm, device='cuda', mem_size=10000):
+    def __init__(self, sent_list, text_model, norm=None, device='cuda', mem_size=10000):
         state_shape = cfg.params["STATE_SHAPE"]
         n_actions = cfg.params["MAX_SENT_LEN"]
         self.norm = norm
@@ -142,15 +142,17 @@ class DQNAgent:
             s = self.env.reset()
             done = False
             s = torch.Tensor(s).to(self.device).view(1, -1)
-            s = self.norm.normalize(s)
+            s = self.norm.normalize(s) if self.norm is not None else s
             tot_reward = 0
             while not done:
                 # Select and perform an action
                 action = self.select_action(s, self.env.legal_moves)
                 s_new, reward, done, _ = self.env.step(action.item())
                 reward = torch.tensor([reward], device=self.device, dtype=torch.float32)
-                s_new = self.norm.normalize(torch.Tensor(s_new).to(self.device).view(1, -1)) if not done else None
-                # s_new = torch.Tensor(s_new).to(device).view(1, -1) if not done else None
+                if self.norm is not None:
+                    s_new = self.norm.normalize(torch.Tensor(s_new).to(self.device).view(1, -1)) if not done else None
+                else:
+                    s_new = torch.Tensor(s_new).to(self.device).view(1, -1) if not done else None
                 tot_reward += reward
 
                 legal_moves = torch.zeros([1, cfg.params["MAX_SENT_LEN"]], dtype=bool)

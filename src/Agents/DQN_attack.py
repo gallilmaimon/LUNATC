@@ -59,7 +59,7 @@ if offline_normalising:  # If using offline normalising with the initial states
 
 # multi-processing lock used for normalisation
 norm_lock = None
-norm = get_normaliser(state_shape, norm_rounds, norm_states, norm_lock) if norm_rounds != -1 else None
+norm = get_normaliser(state_shape, norm_rounds, norm_states, norm_lock, device=device) if norm_rounds != -1 else None
 
 dqn = DQNAgent(sent_list, text_model, norm, device)
 
