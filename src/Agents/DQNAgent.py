@@ -54,8 +54,8 @@ class DQNAgent:
         sess = tf.Session()
         sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
-        self.env = SynonymEnvironment(cfg.params["MAX_SENT_LEN"], sent_list, sess, init_sentence=None,
-                                      text_model=text_model, max_turns=cfg.params["MAX_TURNS"])
+        self.env = SynonymEnvironment(n_actions, sent_list, sess, init_sentence=None, text_model=text_model,
+                                      max_turns=cfg.params["MAX_TURNS"])
 
         self.policy_net = DQNNet(state_shape, n_actions).to(device)
         self.target_net = DQNNet(state_shape, n_actions).to(device)
@@ -63,7 +63,7 @@ class DQNAgent:
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
 
-        self.optimizer = optim.Adam(self.policy_net.parameters())
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=cfg.params["LEARNING_RATE"])
         self.memory = ReplayMemory(mem_size)
 
         # DQN parameters

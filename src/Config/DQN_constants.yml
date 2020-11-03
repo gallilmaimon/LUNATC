@@ -16,6 +16,6 @@ EPS_END: 0.05  # the minimal epsilon for epsilon-greedy exploration
 EPS_DECAY: 1000  # the decay parameter for epsilon according to the equation: EPS_END + (EPS_START - EPS_END) * exp(-1. * steps_done / EPS_DECAY)
 MAX_TURNS: 30  # max number of turns the agent gets
 STATE_SHAPE: 768  # the size of the agent state representation
-LEARNING_RATE: 0.0005  # the learning rate for the DQN agent
+LEARNING_RATE: 0.001  # the learning rate for the DQN agent
 NORMALISE_ROUNDS: 'offline'  # number of samples to see for state normalising parameters, -1 means no normalising, 'offline' means offline normalising (Which is not supported for individual attacks)
 CALCULATE_ORACLE_USE:  False  # Whether to calculate oracle usage (by writing visited stated to files)
