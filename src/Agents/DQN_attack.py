@@ -10,6 +10,8 @@ LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
 from src.TextModels.E2EBert import E2EBertTextModel
+from src.TextModels.TransferBert import TransferBertTextModel
+from src.TextModels.WordLSTM import WordLSTM
 from src.Agents.Normalizers.norm_utils import get_normaliser
 from src.Agents.DQNAgent import DQNAgent
 from src.Agents.utils.vis_utils import running_mean
@@ -37,7 +39,13 @@ def attack_individually(model_type: str = "e2e"):
     assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
 
     # define text model
-    text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
+    text_model = None  # just to make sure it is not somehow referenced before assignment
+    if model_type == "transfer":
+        text_model = TransferBertTextModel(trained_model=base_path + '.pth')
+    elif model_type == "e2e":
+        text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
+    elif model_type == "lstm":
+        text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
 
     # generate data
     data_path = base_path + '_sample.csv'
@@ -92,7 +100,13 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     print(sent_list)
 
     # define text model
-    text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
+    text_model = None  # just to make sure it is not somehow referenced before assignment
+    if model_type == "transfer":
+        text_model = TransferBertTextModel(trained_model=base_path + '.pth')
+    elif model_type == "e2e":
+        text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
+    elif model_type == "lstm":
+        text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
 
     # normaliser
     norm_states = None
