@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,49 +23,104 @@ base_path = cfg.params["base_path"]
 # endregion constants
 
 
-# initialise parameters
-model_type = "e2e"
-device = cfg.params["DEVICE"]
-num_rounds = cfg.params["NUM_EPISODES"]
-state_shape = cfg.params["STATE_SHAPE"]
-max_sent_len = cfg.params["MAX_SENT_LEN"]
-lr = cfg.params["LEARNING_RATE"]
-norm_rounds = cfg.params["NORMALISE_ROUNDS"]
-env_type = cfg.params["ENV_TYPE"]
-offline_normalising = True if norm_rounds == 'offline' else False
+def attack_individually(model_type: str = "e2e"):
+    """
+    this function performs the attack on each sentence individually - by retraining the model from scratch each time.
+    the different parameters are read from the constants at the top of the file
+    """
+    # initialise parameters
+    device = cfg.params["DEVICE"]
+    state_shape = cfg.params["STATE_SHAPE"]
+    norm_rounds = cfg.params["NORMALISE_ROUNDS"]
+    offline_normalising = True if norm_rounds == 'offline' else False
 
-assert model_type in ["e2e", "transfer", 'lstm'], \
-    "model type or agent type unrecognised or unsupported!"
+    assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
+
+    # define text model
+    text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
+
+    # generate data
+    data_path = base_path + '_sample.csv'
+    df = pd.read_csv(data_path)
+
+    for n in eval(cfg.params['ATTACKED_INDICES']):
+        # get current text
+        cur_df = df.iloc[n:n + 1]
+        sent_list = list(cur_df.content.values)
+        print('original text', sent_list[0])
+        print('original class', cur_df.label.values[0])
+        print('original prediction', cur_df.preds.values[0])
+
+        # normaliser
+        norm_states = None
+        if offline_normalising:  # If using offline normalising with the initial states
+            norm_states = np.empty((len(cur_df), 768))
+            for j, text in enumerate(sent_list):
+                norm_states[j] = text_model.embed(text).cpu()  # todo: make more efficient with batch processing
+
+        norm = get_normaliser(state_shape, norm_rounds, norm_states, None, device=device) if norm_rounds != -1 else None
+
+        # agent
+        dqn = DQNAgent(sent_list, text_model, norm, device)
+        dqn.train_model(cfg.params['NUM_EPISODES'])
+        plt.plot(dqn.rewards)
+        plt.plot(running_mean(dqn.rewards, 100))
+        plt.show()
 
 
-# generate data
-data_path = base_path + '_sample.csv'
-df = pd.read_csv(data_path)
-# take smaller subset
-df = df.iloc[eval(cfg.params['ATTACKED_INDICES'])]
-print(len(df))
-sent_list = list(df.content.values)
-print(sent_list)
+def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
+    """this model pretrains a single network on the data given"""
+    # initialise parameters
+    device = cfg.params["DEVICE"]
+    state_shape = cfg.params["STATE_SHAPE"]
+    max_sent_len = cfg.params["MAX_SENT_LEN"]
+    lr = cfg.params["LEARNING_RATE"]
+    norm_rounds = cfg.params["NORMALISE_ROUNDS"]
+    env_type = cfg.params["ENV_TYPE"]
+    offline_normalising = True if norm_rounds == 'offline' else False
 
-# define language model
-text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
+    assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
 
+    print(f"Starting epoch number: {epoch}")
+    # generate data
+    data_path = base_path + '_sample.csv'
+    df = pd.read_csv(data_path)
+    # take smaller subset
+    df = df.iloc[eval(cfg.params['ATTACKED_INDICES'])]
+    print(len(df))
+    sent_list = list(df.content.values)
+    print(sent_list)
 
-# normaliser
-norm_states = None
-if offline_normalising:  # If using offline normalising with the initial states
-    norm_states = np.empty((len(df), 768))
-    for j, text in enumerate(sent_list):
-        norm_states[j] = text_model.embed(text).cpu()  # todo: make more efficient with batch processing
+    # define text model
+    text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
 
-# multi-processing lock used for normalisation
-norm_lock = None
-norm = get_normaliser(state_shape, norm_rounds, norm_states, norm_lock, device=device) if norm_rounds != -1 else None
+    # normaliser
+    norm_states = None
+    if offline_normalising:  # If using offline normalising with the initial states
+        norm_states = np.empty((len(df), 768))
+        for j, text in enumerate(sent_list):
+            norm_states[j] = text_model.embed(text).cpu()  # todo: make more efficient with batch processing
 
-dqn = DQNAgent(sent_list, text_model, norm, device)
+    norm = get_normaliser(state_shape, norm_rounds, norm_states, None, device=device) if norm_rounds != -1 else None
 
-for j in range(5):
+    # agent
+    dqn = DQNAgent(sent_list, text_model, norm, device)
     dqn.train_model(cfg.params['NUM_EPISODES'])
     plt.plot(dqn.rewards)
     plt.plot(running_mean(dqn.rewards, 100))
     plt.show()
+
+
+if __name__ == "__main__":
+    attack_type = cfg.params['ATTACK_TYPE']
+    # attack each text separately
+    if attack_type == 'individual':
+        attack_individually(model_type=cfg.params['MODEL_TYPE'])
+
+    elif attack_type == 'universal':
+        general_start = time.time()
+        for epoch in range(1):
+            start = time.time()
+            pretrain_attack_model(model_type=cfg.params['MODEL_TYPE'], epoch=epoch)
+            print('time', time.time() - start)
+        print('total time', time.time() - general_start)
