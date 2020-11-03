@@ -69,7 +69,8 @@ def attack_individually(model_type: str = "e2e"):
         norm = get_normaliser(state_shape, norm_rounds, norm_states, None, device=device) if norm_rounds != -1 else None
 
         # agent
-        dqn = DQNAgent(sent_list, text_model, norm, device)
+        n_actions = len(sent_list[0].split())
+        dqn = DQNAgent(sent_list, text_model, n_actions, norm, device)
         dqn.train_model(cfg.params['NUM_EPISODES'])
         plt.plot(dqn.rewards)
         plt.plot(running_mean(dqn.rewards, 100))
@@ -81,10 +82,9 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     # initialise parameters
     device = cfg.params["DEVICE"]
     state_shape = cfg.params["STATE_SHAPE"]
-    max_sent_len = cfg.params["MAX_SENT_LEN"]
+    n_actions = cfg.params["MAX_SENT_LEN"]
     lr = cfg.params["LEARNING_RATE"]
     norm_rounds = cfg.params["NORMALISE_ROUNDS"]
-    env_type = cfg.params["ENV_TYPE"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
     assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
@@ -118,7 +118,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     norm = get_normaliser(state_shape, norm_rounds, norm_states, None, device=device) if norm_rounds != -1 else None
 
     # agent
-    dqn = DQNAgent(sent_list, text_model, norm, device)
+    dqn = DQNAgent(sent_list, text_model, n_actions, norm, device)
     dqn.train_model(cfg.params['NUM_EPISODES'])
     plt.plot(dqn.rewards)
     plt.plot(running_mean(dqn.rewards, 100))

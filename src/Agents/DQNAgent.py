@@ -45,9 +45,9 @@ class DQNNet(nn.Module):
 
 
 class DQNAgent:
-    def __init__(self, sent_list, text_model, norm=None, device='cuda', mem_size=10000):
+    def __init__(self, sent_list, text_model, n_actions, norm=None, device='cuda', mem_size=10000):
         state_shape = cfg.params["STATE_SHAPE"]
-        n_actions = cfg.params["MAX_SENT_LEN"]
+        self.n_actions = n_actions
         self.norm = norm
         self.device = device
 
@@ -155,7 +155,7 @@ class DQNAgent:
                     s_new = torch.Tensor(s_new).to(self.device).view(1, -1) if not done else None
                 tot_reward += reward
 
-                legal_moves = torch.zeros([1, cfg.params["MAX_SENT_LEN"]], dtype=bool)
+                legal_moves = torch.zeros([1, self.n_actions], dtype=bool)
                 legal_moves[:, possible_actions(self.env.state)] = True
 
                 # Store the transition in memory
