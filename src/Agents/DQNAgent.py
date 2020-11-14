@@ -120,8 +120,8 @@ class DQNAgent:
         # next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
 
         # For double DQNNet - variant
-        chosen_actions = (self.policy_net(non_final_next_states)+(-1*np.inf*(legal_batch[non_final_mask]))).argmax(1).detach().view(-1, 1)
-        next_state_values[non_final_mask] = self.target_net(non_final_next_states).gather(1, chosen_actions).view(-1)
+        chosen_actions = (self.target_net(non_final_next_states)+(-1*np.inf*(legal_batch[non_final_mask]))).argmax(1).detach().view(-1, 1)
+        next_state_values[non_final_mask] = self.policy_net(non_final_next_states).gather(1, chosen_actions).view(-1)
 
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
@@ -159,7 +159,7 @@ class DQNAgent:
                 legal_moves[:, possible_actions(self.env.state)] = True
 
                 # Store the transition in memory
-                self.memory.push(s, action, s_new, reward, legal_moves.to(self.device))
+                self.memory.push(s, action, s_new, reward, legal_moves.to(self.device), None)
 
                 # Move to the next state
                 s = s_new
@@ -175,4 +175,3 @@ class DQNAgent:
             # Update the target network, copying all weights and biases in DQNNet
             if i_episode % self.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
-

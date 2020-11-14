@@ -14,6 +14,7 @@ from src.TextModels.TransferBert import TransferBertTextModel
 from src.TextModels.WordLSTM import WordLSTM
 from src.Agents.Normalizers.norm_utils import get_normaliser
 from src.Agents.DQNAgent import DQNAgent
+from src.Agents.ContinuousDQNAgent import ContinuousDQNAgent
 from src.Agents.utils.vis_utils import running_mean
 
 # configuration
@@ -70,11 +71,25 @@ def attack_individually(model_type: str = "e2e"):
 
         # agent
         n_actions = len(sent_list[0].split())
-        dqn = DQNAgent(sent_list, text_model, n_actions, norm, device)
-        dqn.train_model(cfg.params['NUM_EPISODES'])
-        plt.plot(dqn.rewards)
-        plt.plot(running_mean(dqn.rewards, 100))
-        plt.show()
+        dqn = None
+        if cfg.params['AGENT_TYPE'] == 'dqn':
+            dqn = DQNAgent(sent_list, text_model, n_actions, norm, device)
+        elif cfg.params['AGENT_TYPE'] == 'dqn_contin':
+            dqn = ContinuousDQNAgent(sent_list, text_model, n_actions, norm, device)
+        else:
+            print("illegal AGENT_TYPE selected! choose one of ['dqn', 'dqn_contin']")
+            exit(0)
+
+        try:
+            dqn.train_model(cfg.params['NUM_EPISODES'])
+            plt.plot(dqn.rewards)
+            plt.plot(running_mean(dqn.rewards, 100))
+            plt.show()
+        except KeyboardInterrupt:
+            plt.plot(dqn.rewards)
+            plt.plot(running_mean(dqn.rewards, 100))
+            plt.show()
+            exit(0)
 
 
 def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
@@ -83,7 +98,6 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     device = cfg.params["DEVICE"]
     state_shape = cfg.params["STATE_SHAPE"]
     n_actions = cfg.params["MAX_SENT_LEN"]
-    lr = cfg.params["LEARNING_RATE"]
     norm_rounds = cfg.params["NORMALISE_ROUNDS"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
@@ -117,12 +131,27 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
 
     norm = get_normaliser(state_shape, norm_rounds, norm_states, None, device=device) if norm_rounds != -1 else None
 
-    # agent
-    dqn = DQNAgent(sent_list, text_model, n_actions, norm, device)
-    dqn.train_model(cfg.params['NUM_EPISODES'])
-    plt.plot(dqn.rewards)
-    plt.plot(running_mean(dqn.rewards, 100))
-    plt.show()
+    # define agent
+    dqn = None
+    if cfg.params['AGENT_TYPE'] == 'dqn':
+        dqn = DQNAgent(sent_list, text_model, n_actions, norm, device)
+    elif cfg.params['AGENT_TYPE'] == 'dqn_contin':
+        dqn = ContinuousDQNAgent(sent_list, text_model, n_actions, norm, device)
+    else:
+        print("illegal AGENT_TYPE selected! choose one of ['dqn', 'dqn_contin']")
+        exit(0)
+
+    # train
+    try:
+        dqn.train_model(cfg.params['NUM_EPISODES'])
+        plt.plot(dqn.rewards)
+        plt.plot(running_mean(dqn.rewards, 100))
+        plt.show()
+    except KeyboardInterrupt:
+        plt.plot(dqn.rewards)
+        plt.plot(running_mean(dqn.rewards, 100))
+        plt.show()
+        exit(0)
 
 
 if __name__ == "__main__":

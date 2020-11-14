@@ -3,7 +3,7 @@ from collections import namedtuple
 
 
 Transition = namedtuple('Transition',
-                        ('state', 'action', 'next_state', 'reward', 'legal_moves'))
+                        ('state', 'action', 'next_state', 'reward', 'legal_moves', 'emb_next_action'))
 
 
 class ReplayMemory(object):

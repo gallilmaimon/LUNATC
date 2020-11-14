@@ -15,11 +15,9 @@ LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
 from src.Environments.ContinuousSynonymEnvironment import ContinuousSynonymEnvironment
-from src.Environments.utils.action_utils import possible_actions
 from src.Agents.utils.ReplayMemory import ReplayMemory, Transition
 from src.TextModels.text_model_utils import load_embedding_dict
 
-import time
 
 # configuration
 from src.Config.Config import Config
@@ -49,9 +47,9 @@ class ContinuousDQNNet(nn.Module):
 
 class ContinuousDQNAgent:
     def __init__(self, sent_list, text_model, n_actions, norm=None, device='cuda', mem_size=10000):
-        state_shape = cfg.params["STATE_SHAPE"]
+        self.state_shape = cfg.params["STATE_SHAPE"]
         self.n_actions = n_actions
-        action_shape = 200  # TODO: make not constant
+        self.action_shape = 200  # TODO: make not constant
         self.norm = norm
         self.device = device
 
@@ -61,8 +59,8 @@ class ContinuousDQNAgent:
         self.env = ContinuousSynonymEnvironment(n_actions, sent_list, sess, init_sentence=None, text_model=text_model,
                                                 max_turns=cfg.params["MAX_TURNS"])
 
-        self.policy_net = ContinuousDQNNet(state_shape, action_shape).to(device)
-        self.target_net = ContinuousDQNNet(state_shape, action_shape).to(device)
+        self.policy_net = ContinuousDQNNet(self.state_shape, self.action_shape).to(device)
+        self.target_net = ContinuousDQNNet(self.state_shape, self.action_shape).to(device)
 
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
@@ -97,7 +95,7 @@ class ContinuousDQNAgent:
                 # return the action with the largest expected reward from within the legal actions
                 best_a = self.policy_net(s_a).argmax(0)
                 return torch.tensor(legal_actions[best_a], device=self.device, dtype=torch.long).view(1, 1), \
-                       action_embeddings[best_a, :]
+                       action_embeddings[best_a[0], :]
 
         else:
             ind = random.randint(0, len(legal_actions) - 1)
@@ -110,29 +108,16 @@ class ContinuousDQNAgent:
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for detailed explanation). This converts
         # batch-array of Transitions to Transition of batch-arrays.
         batch = Transition(*zip(*transitions))
-        # embed next state texts as vectors
-        # TODO: make tidier
-        texts = []
-        next_actions = []
-        non_final_mask = []
-        for i, text in enumerate(batch.next_state):
-            if text is None:
-                non_final_mask.append(False)
-            else:
-                non_final_mask.append(True)
-                texts.append(text)
-                next_actions.append(self._get_embedded_actions(text, batch.legal_moves[i]))
 
-        non_final_mask = torch.tensor(non_final_mask).bool().to(self.device)
-        t1 = time.time()
-        non_final_next_states = self.env.get_embedded_state(texts).to(self.device)
-        print(time.time() -t1)
-        next_state_actions = torch.cat(next_actions).to(self.device)
+        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch.next_state)), device=self.device,
+                                      dtype=torch.bool)
+        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
+        next_state_actions = torch.cat([s for s in batch.emb_next_action if s is not None])
 
         state_batch = torch.cat(batch.state)
         action_batch = torch.cat(batch.action)
         reward_batch = torch.cat(batch.reward)
-        legal_batch = torch.cat(batch.legal_moves)
+        legal_batch = torch.cat(batch.legal_moves)[non_final_mask]
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the columns of actions taken. These are the
         # actions which would've been taken for each batch state according to policy_net
@@ -143,20 +128,25 @@ class ContinuousDQNAgent:
         # such that we'll have either the expected state value or 0 in case the state was final.
         next_state_values = torch.zeros(self.batch_size, device=self.device)
         legal_count = legal_batch.sum(axis=1)
-        stacked_next_state = torch.repeat_interleave(non_final_next_states, legal_count, dim=0) # of shape (sum(legal_actions), state_shape)
-        stacked_input = torch.cat([stacked_next_state, next_state_actions], dim=1)
-        net_out = self.target_net(stacked_input).view(-1)
+        stacked_next_state = non_final_next_states.repeat((1, self.n_actions)).view(-1, self.state_shape)
 
-        # loop over actions for each tuple from the batch - to get best action index for each sample
-        chosen_actions = torch.zeros(self.batch_size, device=self.device, dtype=torch.long)
-        cum_sum = torch.tensor([0], device=self.device)
-        for j in range(legal_count.shape[0]):
-            chosen_actions[j] = cum_sum + net_out[cum_sum:cum_sum+legal_count[j]].argmax()
-            cum_sum += legal_count[j]
+        stacked_input = torch.cat([stacked_next_state, next_state_actions], dim=1)
+        net_out = self.target_net(stacked_input).view(-1, self.n_actions)
+
+        # TODO: make more efficient
+        mask = torch.zeros(net_out.shape[0], net_out.shape[1] + 1, dtype=net_out.dtype, device=net_out.device)
+        mask[(torch.arange(net_out.shape[0]), legal_count)] = 1
+        mask = mask.cumsum(dim=1)[:, :-1]
+        mask = mask*torch.tensor(-1*float("inf"))
+        mask[mask != mask] = 0
+        net_out += mask
+
+        chosen_actions = net_out.argmax(1) + torch.arange(start=0, end=self.n_actions*len(non_final_next_states)-1,
+                                                          step=self.n_actions, device=self.device)
 
         # input selected actions to target net
         target_net_input = torch.cat([non_final_next_states, next_state_actions.index_select(0, chosen_actions)], dim=1)
-        next_state_values[non_final_mask] = self.target_net(target_net_input).view(-1)
+        next_state_values[non_final_mask] = self.policy_net(target_net_input).view(-1)
 
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
@@ -167,16 +157,25 @@ class ContinuousDQNAgent:
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        # for param in self.policy_net.parameters():
+        #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
     def _get_embedded_actions(self, text, legal_moves):
         if type(legal_moves) == list:
+            if len(legal_moves) == 0:
+                return None
             words = np.array(text.split())[legal_moves]
         else:
             words = np.array(text.split())[legal_moves.cpu()[0]]
         return torch.cat([self.word2vec[word] for word in words]).to(self.device)
+
+    # def _get_embedded_actions(self, text, legal_moves):
+    #     if len(legal_moves) == 0:
+    #         return None
+    #     mask = torch.zeros(len(legal_moves), 100, device=self.device)
+    #     mask[(torch.arange(len(legal_moves)), legal_moves)] = 1
+    #     return mask
 
     def train_model(self, num_episodes):
         for i_episode in range(num_episodes):
@@ -184,31 +183,37 @@ class ContinuousDQNAgent:
             s = self.env.reset()
             done = False
             tot_reward = 0
-            while not done:
-                # get embedded action representation and embed state
-                embedded_a = self._get_embedded_actions(s, self.env.legal_moves)
-                s = self.env.get_embedded_state(s).to(self.device).view(1, -1)
-                s = self.norm.normalize(s) if self.norm is not None else s
 
+            # get embedded action representation and embed state
+            embedded_a = self._get_embedded_actions(s, self.env.legal_moves)
+            s = self.env.get_embedded_state(s).to(self.device).view(1, -1)
+            s = self.norm.normalize(s) if self.norm is not None else s
+
+            while not done:
                 # Select and perform an action
                 action, emb_a = self.select_action(s, self.env.legal_moves, embedded_a)
 
                 s_new, reward, done, _ = self.env.step(action.item())
+
+                new_emb_a = self._get_embedded_actions(s_new, self.env.legal_moves) if not done else None
+                new_emb_a_pad = torch.cat([new_emb_a, torch.zeros((self.n_actions - len(new_emb_a), self.action_shape),
+                                                                  device=self.device)]) if not done else None
                 reward = torch.tensor([reward], device=self.device, dtype=torch.float32)
-                # if self.norm is not None:
-                #     s_new = self.norm.normalize(torch.Tensor(s_new).to(self.device).view(1, -1)) if not done else None
-                # else:
-                #     s_new = torch.Tensor(s_new).to(self.device).view(1, -1) if not done else None
+                if self.norm is not None:
+                    s_new = self.norm.normalize(self.env.get_embedded_state(s_new).to(self.device).view(1, -1)) if not done else None
+                else:
+                    s_new = self.env.get_embedded_state(s_new).view(1, -1) if not done else None
                 tot_reward += reward
 
                 legal_moves = torch.zeros([1, self.n_actions], dtype=bool)
-                legal_moves[:, possible_actions(self.env.state)] = True
+                legal_moves[:, self.env.legal_moves] = True
 
                 # Store the transition in memory
-                self.memory.push(s, emb_a.unsqueeze(0), s_new, reward, legal_moves.to(self.device))
+                self.memory.push(s, emb_a.unsqueeze(0), s_new, reward, legal_moves.to(self.device), new_emb_a_pad)
 
                 # Move to the next state
                 s = s_new
+                embedded_a = new_emb_a
 
                 # Perform one step of the optimization (on the target network)
                 self._optimize_model()
@@ -221,50 +226,3 @@ class ContinuousDQNAgent:
             # Update the target network, copying all weights and biases in DQNNet
             if i_episode % self.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
-
-
-import pandas as pd
-from src.TextModels.E2EBert import E2EBertTextModel
-import matplotlib.pyplot as plt
-from src.Agents.utils.vis_utils import running_mean
-
-# initialise parameters
-device = cfg.params["DEVICE"]
-state_shape = cfg.params["STATE_SHAPE"]
-norm_rounds = cfg.params["NORMALISE_ROUNDS"]
-offline_normalising = True if norm_rounds == 'offline' else False
-
-
-# define text model
-text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
-
-# generate data
-data_path = base_path + '_sample.csv'
-df = pd.read_csv(data_path)
-
-for n in eval(cfg.params['ATTACKED_INDICES']):
-    # get current text
-    cur_df = df.iloc[n:n + 1]
-    sent_list = list(cur_df.content.values)
-    print('original text', sent_list[0])
-    print('original class', cur_df.label.values[0])
-    print('original prediction', cur_df.preds.values[0])
-
-    # # normaliser
-    # norm_states = None
-    # if offline_normalising:  # If using offline normalising with the initial states
-    #     norm_states = np.empty((len(cur_df), 768))
-    #     for j, text in enumerate(sent_list):
-    #         norm_states[j] = text_model.embed(text).cpu()  # todo: make more efficient with batch processing
-    #
-    # norm = get_normaliser(state_shape, norm_rounds, norm_states, None, device=device) if norm_rounds != -1 else None
-
-    norm = None
-
-    # agent
-    n_actions = len(sent_list[0].split())
-    dqn = ContinuousDQNAgent(sent_list, text_model, n_actions, norm, device)
-    dqn.train_model(cfg.params['NUM_EPISODES'])
-    plt.plot(dqn.rewards)
-    plt.plot(running_mean(dqn.rewards, 100))
-    plt.show()
