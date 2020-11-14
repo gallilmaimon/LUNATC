@@ -8,7 +8,7 @@ MODEL_TYPE: 'e2e'  # attacked model type: end-to-end transfer learning of BERT o
 NUM_EPISODES: 1000  # number of episodes to "play" for each text if attacking individually, or altogether else
 EARLY_STOPPING:   # the reward above which the attack stops, leave empty for no early_Stopping. when aiming for any attack, and not the best this speeds things up dramatically
 ENTROPY_ALPHA : 1.0  # the weighting for the entropy loss
-MAX_SENT_LEN: 100  # the maximum sentence length, which influences the number of actions. ignored if attacking individually
+MAX_SENT_LEN: 150  # the maximum sentence length, which influences the number of actions. ignored if attacking individually
 UPDATE_GLOBAL_ITER: 10  # every how many agent steps to calculate loss and update
 GAMMA: 1.0  # the decay parameter for the A3C loss
 MAX_TURNS: 30  # max number of turns the agent gets

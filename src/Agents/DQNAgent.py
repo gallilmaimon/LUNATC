@@ -76,6 +76,8 @@ class DQNAgent:
 
         self.steps_done = 0
         self.rewards = []
+        self.init_states = []
+        self.final_states = []
 
     def select_action(self, s, legal_actions):
         eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
@@ -140,6 +142,7 @@ class DQNAgent:
         for i_episode in range(num_episodes):
             # Initialize the environment and state
             s = self.env.reset()
+            self.init_states.append(self.env.state)
             done = False
             s = torch.Tensor(s).to(self.device).view(1, -1)
             s = self.norm.normalize(s) if self.norm is not None else s
@@ -167,7 +170,8 @@ class DQNAgent:
                 # Perform one step of the optimization (on the target network)
                 self._optimize_model()
                 if done:
-                    self.rewards.append(tot_reward)
+                    self.rewards.append(tot_reward.item())
+                    self.final_states.append(self.env.state)
                     self.env.render()
                     print("Ep:", i_episode, "| Ep_r: %.5f" % tot_reward)
                     break

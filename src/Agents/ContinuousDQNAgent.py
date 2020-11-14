@@ -83,6 +83,8 @@ class ContinuousDQNAgent:
 
         self.steps_done = 0
         self.rewards = []
+        self.init_states = []
+        self.final_states = []
 
     def select_action(self, s, legal_actions, action_embeddings):
         eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
@@ -181,6 +183,7 @@ class ContinuousDQNAgent:
         for i_episode in range(num_episodes):
             # Initialize the environment and state
             s = self.env.reset()
+            self.init_states.append(self.env.state)
             done = False
             tot_reward = 0
 
@@ -218,7 +221,8 @@ class ContinuousDQNAgent:
                 # Perform one step of the optimization (on the target network)
                 self._optimize_model()
                 if done:
-                    self.rewards.append(tot_reward)
+                    self.final_states.append(self.env.state)
+                    self.rewards.append(tot_reward.item())
                     self.env.render()
                     print("Ep:", i_episode, "| Ep_r: %.5f" % tot_reward)
                     break

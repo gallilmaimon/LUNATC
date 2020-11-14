@@ -1,6 +1,5 @@
 import time
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 
 # add base path so that can import other files from project
@@ -15,7 +14,7 @@ from src.TextModels.WordLSTM import WordLSTM
 from src.Agents.Normalizers.norm_utils import get_normaliser
 from src.Agents.DQNAgent import DQNAgent
 from src.Agents.ContinuousDQNAgent import ContinuousDQNAgent
-from src.Agents.utils.vis_utils import running_mean
+from src.Agents.utils.vis_utils import log_results
 
 # configuration
 from src.Config.Config import Config
@@ -35,6 +34,7 @@ def attack_individually(model_type: str = "e2e"):
     device = cfg.params["DEVICE"]
     state_shape = cfg.params["STATE_SHAPE"]
     norm_rounds = cfg.params["NORMALISE_ROUNDS"]
+    handle_out = cfg.params["HANDLE_OUT"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
     assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
@@ -52,6 +52,7 @@ def attack_individually(model_type: str = "e2e"):
     data_path = base_path + '_sample.csv'
     df = pd.read_csv(data_path)
 
+    os.makedirs(f"{base_path}_{cfg.params['AGENT_TYPE']}_results", exist_ok=True)
     for n in eval(cfg.params['ATTACKED_INDICES']):
         # get current text
         cur_df = df.iloc[n:n + 1]
@@ -82,13 +83,9 @@ def attack_individually(model_type: str = "e2e"):
 
         try:
             dqn.train_model(cfg.params['NUM_EPISODES'])
-            plt.plot(dqn.rewards)
-            plt.plot(running_mean(dqn.rewards, 100))
-            plt.show()
+            log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/{n}.csv")
         except KeyboardInterrupt:
-            plt.plot(dqn.rewards)
-            plt.plot(running_mean(dqn.rewards, 100))
-            plt.show()
+            log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/{n}.csv")
             exit(0)
 
 
@@ -99,6 +96,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     state_shape = cfg.params["STATE_SHAPE"]
     n_actions = cfg.params["MAX_SENT_LEN"]
     norm_rounds = cfg.params["NORMALISE_ROUNDS"]
+    handle_out = cfg.params["HANDLE_OUT"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
     assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
@@ -131,6 +129,8 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
 
     norm = get_normaliser(state_shape, norm_rounds, norm_states, None, device=device) if norm_rounds != -1 else None
 
+    os.makedirs(f"{base_path}_{cfg.params['AGENT_TYPE']}_results", exist_ok=True)
+
     # define agent
     dqn = None
     if cfg.params['AGENT_TYPE'] == 'dqn':
@@ -144,13 +144,9 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     # train
     try:
         dqn.train_model(cfg.params['NUM_EPISODES'])
-        plt.plot(dqn.rewards)
-        plt.plot(running_mean(dqn.rewards, 100))
-        plt.show()
+        log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/train_{epoch}.csv")
     except KeyboardInterrupt:
-        plt.plot(dqn.rewards)
-        plt.plot(running_mean(dqn.rewards, 100))
-        plt.show()
+        log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/train_{epoch}.csv")
         exit(0)
 
 
