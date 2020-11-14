@@ -15,7 +15,7 @@ from gensim.models import KeyedVectors
 from nltk.corpus import stopwords
 
 # re-translation
-from translate import Translator
+# from translate import Translator
 
 # misspelling
 import nlpaug.model.char as nmc

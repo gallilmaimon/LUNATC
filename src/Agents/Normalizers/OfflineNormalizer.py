@@ -3,10 +3,13 @@ from src.Agents.Normalizers.Normalizer import Normalizer
 
 
 class OfflineNormalizer(Normalizer):
-    def __init__(self, states):
+    def __init__(self, states, device='numpy'):
         super().__init__()
         self.mean = torch.Tensor(states.mean(axis=0))
         self.var = torch.Tensor(states.var(axis=0))
+        if device != 'numpy':
+            self.mean = self.mean.to(device)
+            self.var = self.var.to(device)
 
     def observe(self, x):
         pass

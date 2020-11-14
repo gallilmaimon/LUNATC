@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 # bert
 import torch
-from pytorch_pretrained_bert import BertTokenizer, BertModel
+from transformers import BertTokenizer, BertModel
 from src.TextModels.text_model_utils import embed_sentence_mean_layer11
 
 

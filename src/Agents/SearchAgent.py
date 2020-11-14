@@ -3,7 +3,7 @@ import numpy as np
 import os
 from torch import multiprocessing as mp
 
-from src.Agents.utils.utils import record
+from src.Agents.utils.optim_utils import record
 from src.Environments.SynonymEnvironment import SynonymEnvironment
 from src.Environments.SynonymDeleteEnvironment import SynonymDeleteEnvironment
 from src.Environments.SynonymMisspellEnvironement import SynonymMisspellEnvironment

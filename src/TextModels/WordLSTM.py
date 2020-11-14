@@ -9,8 +9,8 @@ import torch.nn as nn
 
 # bert
 import torch
-from pytorch_pretrained_bert import BertTokenizer, BertModel
-from src.TextModels.text_model_utils import embed_sentence_mean_layer11, glove_tokenify, load_embedding
+from transformers import BertModel, BertConfig, BertTokenizer
+from src.TextModels.text_model_utils import glove_tokenify, load_embedding, embed_texts
 
 LIB_DIR = os.path.abspath(__file__).split('src')[0]
 VOCAB_SIZE = 399999 + 2  # number of Glove words + 2 special tokens (padding + out of vocabulary)
@@ -60,8 +60,9 @@ class WordLSTM(TextModel):
         self.word2ind.update({word: i for i, word in enumerate(words)})
 
         # pre-trained bert LM as text embedder
+        config = BertConfig.from_pretrained(bert_type, output_hidden_states=True)
         self.bert_tokeniser = BertTokenizer.from_pretrained(bert_type, do_lower_case=True)
-        self.bert_model = BertModel.from_pretrained(bert_type)
+        self.bert_model = BertModel.from_pretrained(bert_type, config=config)
         self.bert_model.to(device)
         self.device = device
 
@@ -77,7 +78,7 @@ class WordLSTM(TextModel):
         raise NotImplementedError
 
     def embed(self, X):
-        return embed_sentence_mean_layer11(X, self.bert_model, self.bert_tokeniser, self.device)
+        return embed_texts(X, self.bert_model, self.bert_tokeniser, device=self.device)
 
     def predict_proba(self, X):
         embedded_sent = glove_tokenify(X, self.word2ind, self.pad_ind, self.maxlen).to(self.device)

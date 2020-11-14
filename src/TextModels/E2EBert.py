@@ -4,9 +4,9 @@ from src.TextModels.TextModel import TextModel
 
 # bert
 import torch
-from pytorch_pretrained_bert import BertModel
-from transformers import BertForSequenceClassification, BertTokenizer  # , BertModel
-from src.TextModels.text_model_utils import embed_sentence_mean_layer11, pad_sequences
+# from pytorch_pretrained_bert import BertModel
+from transformers import BertForSequenceClassification, BertTokenizer, BertModel, BertConfig
+from src.TextModels.text_model_utils import embed_sentence_mean_layer11, pad_sequences, embed_texts
 
 
 class E2EBertTextModel(TextModel):
@@ -15,7 +15,7 @@ class E2EBertTextModel(TextModel):
 
         # end2end bert for sequence classification (the model being "attacked")
         self.bert_tokeniser = BertTokenizer.from_pretrained(bert_type, do_lower_case=True)
-        self.model = BertForSequenceClassification.from_pretrained("bert-base-uncased",
+        self.model = BertForSequenceClassification.from_pretrained(bert_type,
                                                                    num_labels=num_classes)
         if trained_model is not None:
             self.model.load_state_dict(torch.load(trained_model, map_location=lambda storage, loc: storage))
@@ -25,7 +25,8 @@ class E2EBertTextModel(TextModel):
         self.model.to(device)
 
         # pre-trained bert LM as text embedder
-        self.bert_model = BertModel.from_pretrained(bert_type)
+        config = BertConfig.from_pretrained(bert_type, output_hidden_states=True)
+        self.bert_model = BertModel.from_pretrained(bert_type, config=config)
         self.bert_model.to(device)
         self.device = device
 
@@ -38,7 +39,8 @@ class E2EBertTextModel(TextModel):
         raise NotImplementedError
 
     def embed(self, X):
-        return embed_sentence_mean_layer11(X, self.bert_model, self.bert_tokeniser, self.device)
+        return embed_texts(X, self.bert_model, self.bert_tokeniser, device=self.device)
+        # return embed_sentence_mean_layer11(X, self.bert_model, self.bert_tokeniser, self.device)
 
     def predict_proba(self, X):
         self.model.eval()
