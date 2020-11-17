@@ -31,7 +31,7 @@ class Environment(ABC):
         self.score = 0
 
         if init_sentence is None:
-            np.random.seed()
+            # np.random.seed()
             self.init_sentence = np.random.choice(self.sent_list)
         else:
             self.init_sentence = init_sentence

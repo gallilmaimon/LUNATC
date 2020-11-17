@@ -15,6 +15,8 @@ from src.Agents.Normalizers.norm_utils import get_normaliser
 from src.Agents.DQNAgent import DQNAgent
 from src.Agents.ContinuousDQNAgent import ContinuousDQNAgent
 from src.Agents.utils.vis_utils import log_results
+from src.Agents.utils.optim_utils import seed_everything
+
 
 # configuration
 from src.Config.Config import Config
@@ -151,6 +153,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
 
 
 if __name__ == "__main__":
+    seed_everything(42)
     attack_type = cfg.params['ATTACK_TYPE']
     # attack each text separately
     if attack_type == 'individual':

@@ -70,7 +70,7 @@ class ContinuousDQNAgent:
 
         # Glove embeddings for action embedding
         glove_path = '/resources/word_vectors/glove.6B.200d.txt'  # TODO: make configurable
-        torch.manual_seed(1)  # TODO: make more elegant
+        # torch.manual_seed(1)  # TODO: make more elegant
         self.word2vec = load_embedding_dict(LIB_DIR + glove_path, torch.rand((1, 200)))  # TODO: make configurable
 
         # DQN parameters

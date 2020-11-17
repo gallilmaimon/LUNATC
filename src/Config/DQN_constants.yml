@@ -3,7 +3,7 @@ ATTACKED_INDICES: '[2, 4]'  # '[2,   4,  19,  24,  27,  53,  56,  67,  78,  80]'
 ENV_TYPE: 'Synonym'  # Environment type - from ['Synonym', 'SynonymDelete', 'SynonymMisspell']
 ATTACK_TYPE: 'individual'  # attack each text individually or by learning all text together - from ['universal', 'individual']
 DEVICE: 'cuda'  # which device to use
-AGENT_TYPE: 'dqn_contin'  # agent used to attack ['dqn', 'dqn_contin']
+AGENT_TYPE: 'dqn'  # agent used to attack ['dqn', 'dqn_contin']
 MODEL_TYPE: 'e2e'  # attacked model type: end-to-end transfer learning of BERT or text embedding transfer learning of BERT, or Word-LSTM ['e2e', 'transfer', 'lstm']
 BATCH_SIZE: 128   # number of transitions to sample for training the agent at each step
 NUM_EPISODES: 100  # number of episodes to "play" for each text if attacking individually, or altogether else
