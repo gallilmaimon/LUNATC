@@ -94,6 +94,7 @@ def attack_individually(model_type: str = "e2e"):
 
 def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     """this model pretrains a single network on the data given"""
+    seed_everything(42)
     # initialise parameters
     device = cfg.params["DEVICE"]
     state_shape = cfg.params["STATE_SHAPE"]
