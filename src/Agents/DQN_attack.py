@@ -56,6 +56,7 @@ def attack_individually(model_type: str = "e2e"):
 
     os.makedirs(f"{base_path}_{cfg.params['AGENT_TYPE']}_results", exist_ok=True)
     for n in eval(cfg.params['ATTACKED_INDICES']):
+        seed_everything(42)
         # get current text
         cur_df = df.iloc[n:n + 1]
         sent_list = list(cur_df.content.values)
@@ -153,7 +154,6 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
 
 
 if __name__ == "__main__":
-    seed_everything(42)
     attack_type = cfg.params['ATTACK_TYPE']
     # attack each text separately
     if attack_type == 'individual':

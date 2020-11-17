@@ -1,9 +1,9 @@
 base_path: '../../data/aclImdb/imdb'   # the base path for the data, model, results, etc.
-ATTACKED_INDICES: '[2, 4]'  # '[2,   4,  19,  24,  27,  53,  56,  67,  78,  80]'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
+ATTACKED_INDICES: '[10, 1, 14, 16, 17, 20,   23,   34,   51,   71, 76,   88,   89,   93,  103,  111,  117,  119,  121,  132,  140]'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
 ENV_TYPE: 'Synonym'  # Environment type - from ['Synonym', 'SynonymDelete', 'SynonymMisspell']
 ATTACK_TYPE: 'individual'  # attack each text individually or by learning all text together - from ['universal', 'individual']
 DEVICE: 'cuda'  # which device to use
-AGENT_TYPE: 'dqn'  # agent used to attack ['dqn', 'dqn_contin']
+AGENT_TYPE: 'dqn_contin'  # agent used to attack ['dqn', 'dqn_contin']
 MODEL_TYPE: 'e2e'  # attacked model type: end-to-end transfer learning of BERT or text embedding transfer learning of BERT, or Word-LSTM ['e2e', 'transfer', 'lstm']
 BATCH_SIZE: 128   # number of transitions to sample for training the agent at each step
 NUM_EPISODES: 100  # number of episodes to "play" for each text if attacking individually, or altogether else
