@@ -15,9 +15,9 @@ LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
 from src.Environments.ContinuousSynonymEnvironment import ContinuousSynonymEnvironment
-from src.Agents.utils.ReplayMemory import ReplayMemory, Transition
+from src.Agents.Memory.ReplayMemory import ReplayMemory, Transition
+from src.Agents.Memory.PrioritisedMemory import PrioritisedMemory
 from src.TextModels.text_model_utils import load_embedding_dict
-
 
 # configuration
 from src.Config.Config import Config
@@ -67,10 +67,10 @@ class ContinuousDQNAgent:
 
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=cfg.params["LEARNING_RATE"])
         self.memory = ReplayMemory(mem_size)
+        # self.memory = PrioritisedMemory(mem_size)
 
         # Glove embeddings for action embedding
         glove_path = '/resources/word_vectors/glove.6B.200d.txt'  # TODO: make configurable
-        # torch.manual_seed(1)  # TODO: make more elegant
         self.word2vec = load_embedding_dict(LIB_DIR + glove_path, torch.rand((1, 200)))  # TODO: make configurable
 
         # DQN parameters
@@ -106,7 +106,13 @@ class ContinuousDQNAgent:
     def _optimize_model(self):
         if len(self.memory) < self.batch_size:
             return
-        transitions = self.memory.sample(self.batch_size)
+
+        transitions = None
+        if type(self.memory) == ReplayMemory:
+            transitions = self.memory.sample(self.batch_size)
+        elif type(self.memory) == PrioritisedMemory:
+            transitions, idx, is_weight = self.memory.sample(self.batch_size)
+
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for detailed explanation). This converts
         # batch-array of Transitions to Transition of batch-arrays.
         batch = Transition(*zip(*transitions))
@@ -154,11 +160,20 @@ class ContinuousDQNAgent:
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
         # Compute Huber loss
-        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
+        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none')
+
+        if type(self.memory) == ReplayMemory:
+            weighted_loss = loss.mean()
+        elif type(self.memory) == PrioritisedMemory:
+            weighted_loss = (torch.FloatTensor(is_weight).to(self.device) * loss.view(-1)).mean()
+            # update priorities
+            loss2 = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none').view(-1).detach().cpu().numpy()
+            for j in range(len(loss2)):
+                self.memory.update(idx[j], loss2[j])
 
         # Optimize the model
         self.optimizer.zero_grad()
-        loss.backward()
+        weighted_loss.backward()
         # for param in self.policy_net.parameters():
         #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
@@ -178,6 +193,20 @@ class ContinuousDQNAgent:
     #     mask = torch.zeros(len(legal_moves), 100, device=self.device)
     #     mask[(torch.arange(len(legal_moves)), legal_moves)] = 1
     #     return mask
+
+    def _get_td_error(self, s, embedded_a, s_new, r, new_legal_embedded_a):
+        with torch.no_grad():
+            pred_q = self.policy_net(torch.cat([s, embedded_a], axis=1))
+
+            if s_new is None:
+                calc_q = r
+            else:
+                net_inp = torch.cat([s_new.repeat((len(new_legal_embedded_a), 1)), new_legal_embedded_a], axis=1)
+                chosen_a = self.target_net(net_inp).view(-1).argmax()
+                next_q = self.policy_net(torch.cat([s_new, new_legal_embedded_a[chosen_a].unsqueeze(0)], axis=1))
+                calc_q = r + self.gamma * next_q
+
+            return F.smooth_l1_loss(calc_q, pred_q).cpu().numpy()
 
     def train_model(self, num_episodes):
         for i_episode in range(num_episodes):
@@ -210,15 +239,20 @@ class ContinuousDQNAgent:
 
                 legal_moves = torch.zeros([1, self.n_actions], dtype=bool)
                 legal_moves[:, self.env.legal_moves] = True
+                legal_moves = legal_moves.to(self.device)
 
                 # Store the transition in memory
-                self.memory.push(s, emb_a.unsqueeze(0), s_new, reward, legal_moves.to(self.device), new_emb_a_pad)
+                if type(self.memory) == ReplayMemory:
+                    self.memory.push(s, emb_a.unsqueeze(0), s_new, reward, legal_moves, new_emb_a_pad)
+                elif type(self.memory) == PrioritisedMemory:
+                    td_err = self._get_td_error(s, emb_a.unsqueeze(0), s_new, reward, new_emb_a)
+                    self.memory.add(td_err, (s, emb_a.unsqueeze(0), s_new, reward, legal_moves, new_emb_a_pad))
 
                 # Move to the next state
                 s = s_new
                 embedded_a = new_emb_a
 
-                # Perform one step of the optimization (on the target network)
+                # Perform one step of the optimization
                 self._optimize_model()
                 if done:
                     self.final_states.append(self.env.state)

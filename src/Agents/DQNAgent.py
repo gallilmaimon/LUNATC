@@ -16,7 +16,7 @@ sys.path.insert(1, LIB_DIR)
 
 from src.Environments.SynonymEnvironment import SynonymEnvironment
 from src.Environments.utils.action_utils import possible_actions
-from src.Agents.utils.ReplayMemory import ReplayMemory, Transition
+from src.Agents.Memory.ReplayMemory import ReplayMemory, Transition
 
 # configuration
 from src.Config.Config import Config
