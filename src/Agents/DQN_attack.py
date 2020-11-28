@@ -56,7 +56,7 @@ def attack_individually(model_type: str = "e2e"):
 
     os.makedirs(f"{base_path}_{cfg.params['AGENT_TYPE']}_results", exist_ok=True)
     for n in eval(cfg.params['ATTACKED_INDICES']):
-        seed_everything(42)
+        seed_everything(41)
         # get current text
         cur_df = df.iloc[n:n + 1]
         sent_list = list(cur_df.content.values)
@@ -94,7 +94,7 @@ def attack_individually(model_type: str = "e2e"):
 
 def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     """this model pretrains a single network on the data given"""
-    seed_everything(42)
+    seed_everything(41)
     # initialise parameters
     device = cfg.params["DEVICE"]
     state_shape = cfg.params["STATE_SHAPE"]

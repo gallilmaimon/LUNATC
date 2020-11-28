@@ -11,7 +11,7 @@ class PrioritisedMemory:
         self.capacity = capacity
 
         self.eps = 0.01
-        self.alpha = 0.6
+        self.alpha = 0.2
         self.beta = 0.4
         self.beta_increment_per_sampling = 0.001
 

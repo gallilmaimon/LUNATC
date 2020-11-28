@@ -37,11 +37,19 @@ class ContinuousDQNNet(nn.Module):
         self.linear2 = nn.Linear(500, 200)
         self.relu2 = nn.LeakyReLU()
 
+        # self.linear3 = nn.Linear(200, 100)
+        # self.relu3 = nn.LeakyReLU()
+        #
+        # self.linear4 = nn.Linear(100, 32)
+        # self.relu4 = nn.LeakyReLU()
+
         self.out = nn.Linear(200, 1)
 
     def forward(self, x):
         x = self.relu1(self.linear1(x))
         x = self.relu2(self.linear2(x))
+        # x = self.relu3(self.linear3(x))
+        # x = self.relu4(self.linear4(x))
         return self.out(x)
 
 
@@ -66,8 +74,8 @@ class ContinuousDQNAgent:
         self.target_net.eval()
 
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=cfg.params["LEARNING_RATE"])
-        self.memory = ReplayMemory(mem_size)
-        # self.memory = PrioritisedMemory(mem_size)
+
+        self.memory = PrioritisedMemory(mem_size) if cfg.params["MEM_TYPE"] == 'priority' else ReplayMemory(mem_size)
 
         # Glove embeddings for action embedding
         glove_path = '/resources/word_vectors/glove.6B.200d.txt'  # TODO: make configurable
@@ -139,7 +147,7 @@ class ContinuousDQNAgent:
         stacked_next_state = non_final_next_states.repeat((1, self.n_actions)).view(-1, self.state_shape)
 
         stacked_input = torch.cat([stacked_next_state, next_state_actions], dim=1)
-        net_out = self.target_net(stacked_input).view(-1, self.n_actions)
+        net_out = self.policy_net(stacked_input).view(-1, self.n_actions)
 
         # TODO: make more efficient
         mask = torch.zeros(net_out.shape[0], net_out.shape[1] + 1, dtype=net_out.dtype, device=net_out.device)
@@ -154,7 +162,7 @@ class ContinuousDQNAgent:
 
         # input selected actions to target net
         target_net_input = torch.cat([non_final_next_states, next_state_actions.index_select(0, chosen_actions)], dim=1)
-        next_state_values[non_final_mask] = self.policy_net(target_net_input).view(-1)
+        next_state_values[non_final_mask] = self.target_net(target_net_input).view(-1)
 
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
