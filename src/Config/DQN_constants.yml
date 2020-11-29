@@ -1,5 +1,5 @@
 base_path: '../../data/aclImdb/imdb'   # the base path for the data, model, results, etc.
-ATTACKED_INDICES: '[8]'  # '[0, 1, 3,   8,  10,  11,  13,  14,  16,  17, 20,  22, 23,  25, 34,  35, 40,  51,  59, 61,  68,  70, 71,  73,  76,  78, 83,  87,  88,  89,  90,  92,  93,  99, 103, 104, 111, 113, 117, 119, 121, 125, 132, 142,  155,  157, 159, 182, 189, 198]'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
+ATTACKED_INDICES: '[0, 1, 3,   8,  10,  11,  13,  14,  16,  17, 20,  22, 23,  25, 27, 34,  35, 40,  51,  59, 61,  68,  70, 71,  73,  76,  78, 83,  87,  88,  89,  90,  92,  93,  99, 103, 104, 111, 113, 117, 119, 121, 125, 132, 142,  155,  157, 159, 182, 189, 198]'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
 ENV_TYPE: 'Synonym'  # Environment type - from ['Synonym', 'SynonymDelete', 'SynonymMisspell']
 ATTACK_TYPE: 'individual'  # attack each text individually or by learning all text together - from ['universal', 'individual']
 DEVICE: 'cuda'  # which device to use
@@ -19,4 +19,4 @@ STATE_SHAPE: 768  # the size of the agent state representation
 LEARNING_RATE: 0.00005  # the learning rate for the DQN agent
 NORMALISE_ROUNDS: -1  # number of samples to see for state normalising parameters, -1 means no normalising, 'offline' means offline normalising (Which is not supported for individual attacks)
 HANDLE_OUT: 'save'  # what to do with results from ['save', 'plot'], if to save to csv or plot and show reward graph. If omething else the results aren't logged in any way
-MEM_TYPE:  'priority'  # one of ['priority', 'regular'] if using 'priority' a priority replay buffer is used
+MEM_TYPE:  'regular'  # one of ['priority', 'regular'] if using 'priority' a priority replay buffer is used

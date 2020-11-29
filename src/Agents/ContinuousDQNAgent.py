@@ -8,6 +8,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+from torch.nn.utils.clip_grad import clip_grad_value_
+
 # add base path so that can import other files from project
 import os
 import sys
@@ -182,8 +184,8 @@ class ContinuousDQNAgent:
         # Optimize the model
         self.optimizer.zero_grad()
         weighted_loss.backward()
-        # for param in self.policy_net.parameters():
-        #     param.grad.data.clamp_(-1, 1)
+        clip_grad_value_(self.policy_net.parameters(), 1)
+
         self.optimizer.step()
 
     def _get_embedded_actions(self, text, legal_moves):
