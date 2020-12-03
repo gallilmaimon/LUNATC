@@ -18,6 +18,11 @@ from src.Agents.utils.vis_utils import log_results
 from src.Agents.utils.optim_utils import seed_everything
 
 
+from src.Agents.Memory.ReplayMemory import Transition
+import torch
+from src.Agents.Memory.PrioritisedMemory import PrioritisedMemory
+import pickle
+
 # configuration
 from src.Config.Config import Config
 
@@ -56,7 +61,7 @@ def attack_individually(model_type: str = "e2e"):
 
     os.makedirs(f"{base_path}_{cfg.params['AGENT_TYPE']}_results", exist_ok=True)
     for n in eval(cfg.params['ATTACKED_INDICES']):
-        seed_everything(41)
+        seed_everything(42)
         # get current text
         cur_df = df.iloc[n:n + 1]
         sent_list = list(cur_df.content.values)
@@ -85,7 +90,15 @@ def attack_individually(model_type: str = "e2e"):
             exit(0)
 
         try:
+            # dqn.train_model(100, optimise=False)
+            # batch = Transition(*zip(*dqn.memory.sample(len(dqn.memory))[0]))
+            # dqn.memory = PrioritisedMemory(10000)
+            # norm = get_normaliser(state_shape, norm_rounds, torch.cat(batch.state).cpu().numpy(), None, device=device)
+            # dqn.norm = norm
+
             dqn.train_model(cfg.params['NUM_EPISODES'])
+
+            torch.save(dqn.policy_net.state_dict, LIB_DIR + '/data/aclImdb/agent_new.pth')
             log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/{n}.csv")
         except KeyboardInterrupt:
             log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/{n}.csv")
@@ -145,12 +158,16 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
         print("illegal AGENT_TYPE selected! choose one of ['dqn', 'dqn_contin']")
         exit(0)
 
+    if epoch > 0:
+        dqn.load_agent(f"{base_path}_{cfg.params['AGENT_TYPE']}_results/agent_{epoch-1}")
     # train
     try:
         dqn.train_model(cfg.params['NUM_EPISODES'])
         log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/train_{epoch}.csv")
+        dqn.save_agent(f"{base_path}_{cfg.params['AGENT_TYPE']}_results/agent_{epoch}")
     except KeyboardInterrupt:
         log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/train_{epoch}.csv")
+        dqn.save_agent(f"{base_path}_{cfg.params['AGENT_TYPE']}_results/agent_{epoch}")
         exit(0)
 
 
@@ -162,7 +179,7 @@ if __name__ == "__main__":
 
     elif attack_type == 'universal':
         general_start = time.time()
-        for epoch in range(1):
+        for epoch in range(2):
             start = time.time()
             pretrain_attack_model(model_type=cfg.params['MODEL_TYPE'], epoch=epoch)
             print('time', time.time() - start)

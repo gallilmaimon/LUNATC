@@ -1,5 +1,6 @@
 import math
 import random
+import pickle
 import numpy as np
 import tensorflow as tf
 
@@ -39,19 +40,27 @@ class ContinuousDQNNet(nn.Module):
         self.linear2 = nn.Linear(500, 200)
         self.relu2 = nn.LeakyReLU()
 
-        # self.linear3 = nn.Linear(200, 100)
-        # self.relu3 = nn.LeakyReLU()
-        #
-        # self.linear4 = nn.Linear(100, 32)
-        # self.relu4 = nn.LeakyReLU()
+        self.linear3 = nn.Linear(200, 100)
+        self.relu3 = nn.LeakyReLU()
 
-        self.out = nn.Linear(200, 1)
+        self.linear4 = nn.Linear(100, 32)
+        self.relu4 = nn.LeakyReLU()
+
+        self.linear5 = nn.Linear(32, 32)
+        self.relu5 = nn.LeakyReLU()
+
+        self.linear6 = nn.Linear(32, 32)
+        self.relu6 = nn.LeakyReLU()
+
+        self.out = nn.Linear(32, 1)
 
     def forward(self, x):
         x = self.relu1(self.linear1(x))
         x = self.relu2(self.linear2(x))
-        # x = self.relu3(self.linear3(x))
-        # x = self.relu4(self.linear4(x))
+        x = self.relu3(self.linear3(x))
+        x = self.relu4(self.linear4(x))
+        x = self.relu5(self.linear5(x))
+        x = self.relu6(self.linear6(x))
         return self.out(x)
 
 
@@ -170,14 +179,16 @@ class ContinuousDQNAgent:
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
         # Compute Huber loss
-        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none')
+        # loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none')
+        loss = F.mse_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none')
 
         if type(self.memory) == ReplayMemory:
             weighted_loss = loss.mean()
         elif type(self.memory) == PrioritisedMemory:
             weighted_loss = (torch.FloatTensor(is_weight).to(self.device) * loss.view(-1)).mean()
+            # weighted_loss = loss.mean()
             # update priorities
-            loss2 = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none').view(-1).detach().cpu().numpy()
+            loss2 = F.mse_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none').view(-1).detach().cpu().numpy()
             for j in range(len(loss2)):
                 self.memory.update(idx[j], loss2[j])
 
@@ -196,6 +207,51 @@ class ContinuousDQNAgent:
         else:
             words = np.array(text.split())[legal_moves.cpu()[0]]
         return torch.cat([self.word2vec[word] for word in words]).to(self.device)
+
+    def save_agent(self, path):
+        os.makedirs(path, exist_ok=True)
+        # save models and optimiser
+        torch.save(self.policy_net.state_dict(), path + '/policy.pth')
+        torch.save(self.target_net.state_dict(), path + '/target.pth')
+        torch.save(self.optimizer.state_dict(), path + '/optim.pth')
+
+        # save parameters
+        param_dict = {'gamma': self.gamma, 'eps_start': self.eps_start, 'eps_end': self.eps_end,
+                      'eps_decay': self.eps_decay, 'batch_size': self.batch_size, 'target_update': self.target_update,
+                      'steps_done': self.steps_done, 'state_shape': self.state_shape, 'n_actions': self.n_actions,
+                      'action_shape': self.action_shape, 'device': self.device}
+        with open(path + '/parameters.pkl', 'wb') as f:
+            pickle.dump(param_dict, f)
+
+        # save normaliser
+        with open(path + '/norm.pkl', 'wb') as f:
+            pickle.dump(self.norm, f)
+
+        # save memory
+        # with open(path + '/memory.pkl', 'wb') as f:
+        #     pickle.dump(self.memory, f)
+
+    def load_agent(self, path):
+        # load models and optimiser
+        self.policy_net.load_state_dict(torch.load(path + '/policy.pth'))
+        self.target_net.load_state_dict(torch.load(path + '/target.pth'))
+        self.optimizer.load_state_dict(torch.load(path + '/optim.pth'))
+
+        # load parameters
+        with open(path + '/parameters.pkl', 'rb') as f:
+            params = pickle.load(f)
+        self.gamma, self.eps_start, self.eps_end = params['gamma'], params['eps_start'], params['eps_end']
+        self.eps_decay, self.batch_size, self.target_update = params['eps_decay'], params['batch_size'], params['target_update']
+        self.steps_done, self.state_shape, self.n_actions = params['steps_done'], params['state_shape'], params['n_actions']
+        self.action_shape, self.device = params['action_shape'], params['device']
+
+        # load normaliser
+        with open(path + '/norm.pkl', 'rb') as f:
+            self.norm = pickle.load(f)
+
+        # load memory
+        # with open(path + '/memory.pkl', 'rb') as f:
+        #     self.memory = pickle.load(f)
 
     # def _get_embedded_actions(self, text, legal_moves):
     #     if len(legal_moves) == 0:
@@ -216,9 +272,9 @@ class ContinuousDQNAgent:
                 next_q = self.policy_net(torch.cat([s_new, new_legal_embedded_a[chosen_a].unsqueeze(0)], axis=1))
                 calc_q = r + self.gamma * next_q
 
-            return F.smooth_l1_loss(calc_q, pred_q).cpu().numpy()
+            return F.mse_loss(calc_q.view(-1), pred_q.view(-1)).cpu().numpy()
 
-    def train_model(self, num_episodes):
+    def train_model(self, num_episodes, optimise=True):
         for i_episode in range(num_episodes):
             # Initialize the environment and state
             s = self.env.reset()
@@ -263,7 +319,7 @@ class ContinuousDQNAgent:
                 embedded_a = new_emb_a
 
                 # Perform one step of the optimization
-                self._optimize_model()
+                self._optimize_model() if optimise else ''
                 if done:
                     self.final_states.append(self.env.state)
                     self.rewards.append(tot_reward.item())
