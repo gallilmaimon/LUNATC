@@ -1,6 +1,7 @@
 # imports
 from operator import itemgetter
 import numpy as np
+import torch
 import os
 import pickle
 import re
@@ -278,6 +279,31 @@ def clean_text(text):
     text = ' '.join(text.split())
     return text
 
+
+def get_perplexity(texts, lm, tokeniser, device):
+    try:
+        # efficent batch proccessing works only when texts have same token length
+        # otherwise (ValueError raised) we revert to loop.
+        encodings = tokeniser(texts, return_tensors='pt')
+        inp = encodings.input_ids.to(device)
+        with torch.no_grad():
+            ll = lm(inp)
+
+        shift_logits = ll[0][..., :-1, :].contiguous()
+        shift_labels = inp[..., 1:].contiguous()
+        loss_fct = torch.nn.CrossEntropyLoss(reduction='none')
+        return torch.exp(loss_fct(shift_logits.transpose(1, 2), shift_labels).mean(axis=1))
+
+    except ValueError:
+        ppl = torch.empty(len(texts))
+        for i, text in enumerate(texts):
+            encodings = tokeniser(text, return_tensors='pt')
+            inp = encodings.input_ids.to(device)
+            with torch.no_grad():
+                ll = lm(inp, labels=inp)
+            ppl[i] = torch.exp(ll[0])
+        return ppl
+
 # endregion utility functions
 
 
@@ -310,9 +336,9 @@ def replace_with_synonym(text, word_index, sess, topn=10, word_sim_thresh=0.6,
     # work with single sentence only (that of the given word)
     new_text, new_word_index = get_sentence_of_word_index(text, word_index)
     # look in cache of previously calculated actions
-    if (new_text, int(new_word_index)) in synonym_act_dict:
-        rep_word = synonym_act_dict[(new_text, int(new_word_index))]
-        return replace_word(text, word_index, rep_word)
+    # if (new_text, int(new_word_index)) in synonym_act_dict:
+    #     rep_word = synonym_act_dict[(new_text, int(new_word_index))]
+    #     return replace_word(text, word_index, rep_word)
 
     # Get the list of words from the entire text
     words = new_text.split()
@@ -360,6 +386,108 @@ def replace_with_synonym(text, word_index, sess, topn=10, word_sim_thresh=0.6,
     print(best_option) if debug else ''
 
     if sentence_similarity[best_option] >= sentence_sim_thresh:
+        synonym_act_dict[(new_text, int(new_word_index))] = rep_options[best_option]
+        return replace_word(text, word_index, rep_options[best_option])
+
+    synonym_act_dict[(text, int(word_index))] = word
+    return text
+
+
+def replace_with_synonym_perplexity(text, word_index, sess, topn=10, word_sim_thresh=0.6,
+                                    sentence_sim_thresh=60, debug=False, lm=None, tokeniser=None):
+    """
+    This function replaces the word at a given word_index (when splitting by spaces), of the given text with a synonym.
+    The synonym is chosen by a series of steps. The whole process works only on the sentence in which the word is, for
+    improved results and computational efficiency.
+    0) if the word is a stop word or out of vocabulary no change is made
+    1) generate synonym options by similar words according to cosine distance of word vectors curated for the task -
+    http://mi.eng.cam.ac.uk/~nm480/naaclhlt2016.pdf
+    2) remove words which aren't classified as having the same Part of Speech as the original (in context)
+    3) replace the word with each of the options and compute the new sentence's similarity to the original, using the
+    Universal Sentence Encoder - https://arxiv.org/abs/1803.11175
+    4) return the most similar sentence
+    this is similar to approach suggested in the paper - " Is BERT Really Robust? A Strong Baseline
+    for Natural Language Attack on Text Classification and Entailment" - https://arxiv.org/abs/1907.11932, however it
+    doesn't directly aim to "confuse" the Language model and therefore produces higher quality synonyms
+    :param text: the original text
+    :param word_index: the index of the word to be replaced
+    :param sess: an initialised tensorflow session for runtime efficiency
+    :param topn: how many candidates to consider as synonyms
+    :param word_sim_thresh: how similar does a candidate synonym need to be in order to be considered
+    :param sentence_sim_thresh: how similar does the new sentence need to be to the original
+    :param debug: a flag for extra printed information
+    :return: the new text after the replacement
+    """
+    # work with single sentence only (that of the given word)
+    new_text, new_word_index = get_sentence_of_word_index(text, word_index)
+
+    # new_text, new_word_index = text, word_index
+
+    # look in cache of previously calculated actions
+    # if (new_text, int(new_word_index)) in synonym_act_dict:
+    #     rep_word = synonym_act_dict[(new_text, int(new_word_index))]
+    #     return replace_word(text, word_index, rep_word)
+
+    # Get the list of words from the entire text
+    words = new_text.split()
+    word = words[new_word_index]
+    print('text', text) if debug else ''
+    print('word', word) if debug else ''
+    print('new_text', new_text) if debug else ''
+
+    # if word not in vocabulary or in stopwords
+    if word in STOPWORDS or word not in word_vectors:
+        synonym_act_dict[(new_text, int(new_word_index))] = word
+        return text
+
+    # find synonym options
+    rep_options = word_vectors.most_similar(positive=[word], topn=topn)
+    print('all', rep_options) if debug else ''
+    rep_options = [word for word, sim_score in rep_options if sim_score > word_sim_thresh]
+    print('thresh', rep_options) if debug else ''
+
+    # no good enough synonyms
+    if len(rep_options) == 0:
+        synonym_act_dict[(new_text, int(new_word_index))] = word
+        return text
+
+    # get only those with same POS
+    # same_pos_inds = get_same_POS_replacements(new_text, new_word_index, rep_options)
+    # print('same pos inds', same_pos_inds) if debug else ''
+    # if len(same_pos_inds) == 0:
+    #     synonym_act_dict[(new_text, int(new_word_index))] = word
+    #     return text
+    # rep_options = itemgetter(*same_pos_inds)(rep_options)
+    if type(rep_options) == str:
+        rep_options = list([rep_options])
+    else:
+        rep_options = list(rep_options)
+    print('same POS', rep_options) if debug else ''
+
+    # get sentence similarity to original and perplexity
+    sent_options = []
+    for opt in rep_options:
+        words[new_word_index] = opt
+        sent_options.append(' '.join(words))
+    sentence_similarity = get_similarity([new_text] + sent_options, sess)
+    print('sentence similarity', sentence_similarity) if debug else ''
+
+    # whole text is used for perplexity as opposed to sentence only for similarity
+    text_options = []
+    all_words = text.split()
+    for opt in rep_options:
+        all_words[word_index] = opt
+        text_options.append(' '.join(all_words))
+    text_perplexity = get_perplexity([text] + text_options, lm, tokeniser, device='cuda')
+    ppl_diff = (text_perplexity[1:] - text_perplexity[0]).cpu().numpy()
+    print('text perplexity difference', ppl_diff) if debug else ''
+    combined_score = sentence_similarity * 100 - ppl_diff*2
+    print('combined score', combined_score) if debug else ''
+
+    best_option = np.argmax(combined_score)
+    print(best_option) if debug else ''
+
+    if combined_score[best_option] >= sentence_sim_thresh:
         synonym_act_dict[(new_text, int(new_word_index))] = rep_options[best_option]
         return replace_word(text, word_index, rep_options[best_option])
 
@@ -627,3 +755,26 @@ def misspell(text, word_ind):
     words[word_ind] = new_word
     return ' '.join(words)
 # endregion actions
+
+
+# from transformers import GPT2LMHeadModel, GPT2TokenizerFast
+# if __name__ == '__main__':
+#     device = 'cuda'
+#     model_id = 'gpt2'
+#     model = GPT2LMHeadModel.from_pretrained(model_id).to(device)
+#     tokenizer = GPT2TokenizerFast.from_pretrained(model_id)
+#
+#     # some_text = "drive was an enjoyable episode with a dark ending . basically a man and his wife are infected in their inner ear by a high pitched sound wave being emitted by some military equipment . some favorite parts of mine from this episode are mulder's dialogue in the car , and the scene where scully goes in with the hazmat team and find the little old deaf lady completely unaffected by what they thought was a virus . the ending of course is tragic in its realism because it leads the viewer to believe that they are going to actually be able to pull off this elaborate plan to save the victim but when mulder arrives the man is already dead . 8/10"
+#     # some_text = 'you don\'t have to be a fan of the cartoon show to enjoy this film . i watched it for the first time when i was nine , having been a fan of the t.v show , and my parents laughed just as hard as i did . it is done in the classic style of bugs bunny cartoons from yesterday , and considering todays vulgar cartoons , i would think anybody would appreciate a cartoon movie that relies more on " wackiness " then on vulgarity , to get a few laughs .'
+#     # some_text = "a classic 80's movie that disney for some reason stopped making . i watched this movie everyday when i was in like 6th grade . i found a copy myself after scouring video stores . well worth it though . one of my all time favs"
+#     # some_text = 'this film is not at all as bad as some people on here are saying . i think it has got a decent horror plot and the acting seem normal to me . people are way over - exagerating what was wrong with this . it is simply classic horror , the type without a plot that we have to think about forever and forever . we can just sit back , relax , and be scared .'
+#     # some_text = "the story starts out with a soldier being transported to a desert town then goes back in time to tell the tale of how he came to this place . he started out as an officer in napoleon's army fighting in egypt but became separated from his unit . after nearly starving and / or dying of thirst he came upon a leopard which somehow became his bosom buddy . it brought him food and before long the soldier became almost totally wild so acute was his bonding with the animal . all things do end however and the man decided it was necessary for him to leave the critter . a very strange film , well written and portrayed . beautiful scenery from jordan and utah which didn't always blend perfectly , but who cares ."
+#     some_text = 'a brutally straightforward tale of murder and capital punishment by the state . so painfully slow and accurate in the description of capital punishment ( from the preparation of the gallow to the victim p *** ing in his own pants before dying ) it has the power to change your mind about death penalty . the whole dekalog originated from this story : the dekalog screenwriter was the powerless lawyer unsuccessfully trying to defend and then console the accused .'
+#
+#     sess = tf.Session()
+#     sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
+#
+#     for some_i in range(len(some_text.split())):
+#         print(f"--------{some_i}--------------")
+#         print(replace_with_synonym_perplexity(some_text, some_i, sess, debug=False, lm=model, tokeniser=tokenizer))
+#         print(replace_with_synonym(some_text, some_i, sess, debug=False))
