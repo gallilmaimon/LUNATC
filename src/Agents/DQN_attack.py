@@ -60,9 +60,9 @@ def attack_individually(model_type: str = "e2e"):
     data_path = base_path + '_sample.csv'
     df = pd.read_csv(data_path)
 
-    os.makedirs(f"{base_path}_{cfg.params['AGENT_TYPE']}_results", exist_ok=True)
-    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml",
-                    f"{base_path}_{cfg.params['AGENT_TYPE']}_results/DQN_constants.yml")
+    cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
+    os.makedirs(cur_path, exist_ok=True)
+    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml", f"{cur_path}/DQN_constants.yml")
     for n in eval(cfg.params['ATTACKED_INDICES']):
         seed_everything(42)
         # get current text
@@ -149,9 +149,9 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
 
     norm = get_normaliser(state_shape, norm_rounds, norm_states, None, device=device) if norm_rounds != -1 else None
 
-    os.makedirs(f"{base_path}_{cfg.params['AGENT_TYPE']}_results", exist_ok=True)
-    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml",
-                    f"{base_path}_{cfg.params['AGENT_TYPE']}_results/DQN_constants.yml")
+    cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
+    os.makedirs(cur_path, exist_ok=True)
+    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml", f"{cur_path}/DQN_constants.yml")
 
     # define agent
     dqn = None
@@ -164,15 +164,15 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
         exit(0)
 
     if epoch > 0:
-        dqn.load_agent(f"{base_path}_{cfg.params['AGENT_TYPE']}_results/agent_{epoch-1}")
+        dqn.load_agent(f"{cur_path}/agent_{epoch-1}")
     # train
     try:
         dqn.train_model(cfg.params['NUM_EPISODES'])
-        log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/train_{epoch}.csv")
-        dqn.save_agent(f"{base_path}_{cfg.params['AGENT_TYPE']}_results/agent_{epoch}")
+        log_results(dqn, handle_out, f"{cur_path}/train_{epoch}.csv")
+        dqn.save_agent(f"{cur_path}/agent_{epoch}")
     except KeyboardInterrupt:
-        log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/train_{epoch}.csv")
-        dqn.save_agent(f"{base_path}_{cfg.params['AGENT_TYPE']}_results/agent_{epoch}")
+        log_results(dqn, handle_out, f"{cur_path}/train_{epoch}.csv")
+        dqn.save_agent(f"{cur_path}/agent_{epoch}")
         exit(0)
 
 
