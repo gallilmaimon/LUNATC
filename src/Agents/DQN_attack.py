@@ -102,9 +102,9 @@ def attack_individually(model_type: str = "e2e"):
             dqn.train_model(cfg.params['NUM_EPISODES'])
 
             torch.save(dqn.policy_net.state_dict, LIB_DIR + '/data/aclImdb/agent_new.pth')
-            log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/{n}.csv")
+            log_results(dqn, handle_out, f"{cur_path}/{n}.csv")
         except KeyboardInterrupt:
-            log_results(dqn, handle_out, f"{base_path}_{cfg.params['AGENT_TYPE']}_results/{n}.csv")
+            log_results(dqn, handle_out, f"{cur_path}/{n}.csv")
             exit(0)
 
 

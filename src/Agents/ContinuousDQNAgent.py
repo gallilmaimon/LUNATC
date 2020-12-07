@@ -276,7 +276,6 @@ class ContinuousDQNAgent:
 
     def train_model(self, num_episodes, optimise=True):
         for i_episode in range(num_episodes):
-            print(len(self.memory))
             # Initialize the environment and state
             s = self.env.reset()
             self.init_states.append(self.env.state)
