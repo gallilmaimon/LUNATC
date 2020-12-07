@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 import numpy as np
+import shutil
 
 # add base path so that can import other files from project
 import os
@@ -60,6 +61,8 @@ def attack_individually(model_type: str = "e2e"):
     df = pd.read_csv(data_path)
 
     os.makedirs(f"{base_path}_{cfg.params['AGENT_TYPE']}_results", exist_ok=True)
+    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml",
+                    f"{base_path}_{cfg.params['AGENT_TYPE']}_results/DQN_constants.yml")
     for n in eval(cfg.params['ATTACKED_INDICES']):
         seed_everything(42)
         # get current text
@@ -147,6 +150,8 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     norm = get_normaliser(state_shape, norm_rounds, norm_states, None, device=device) if norm_rounds != -1 else None
 
     os.makedirs(f"{base_path}_{cfg.params['AGENT_TYPE']}_results", exist_ok=True)
+    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml",
+                    f"{base_path}_{cfg.params['AGENT_TYPE']}_results/DQN_constants.yml")
 
     # define agent
     dqn = None
