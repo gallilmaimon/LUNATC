@@ -228,8 +228,8 @@ class ContinuousDQNAgent:
             pickle.dump(self.norm, f)
 
         # save memory
-        # with open(path + '/memory.pkl', 'wb') as f:
-        #     pickle.dump(self.memory, f)
+        with open(path + '/memory.pkl', 'wb') as f:
+            pickle.dump(self.memory, f)
 
     def load_agent(self, path):
         # load models and optimiser
@@ -250,8 +250,8 @@ class ContinuousDQNAgent:
             self.norm = pickle.load(f)
 
         # load memory
-        # with open(path + '/memory.pkl', 'rb') as f:
-        #     self.memory = pickle.load(f)
+        with open(path + '/memory.pkl', 'rb') as f:
+            self.memory = pickle.load(f)
 
     # def _get_embedded_actions(self, text, legal_moves):
     #     if len(legal_moves) == 0:
@@ -276,6 +276,7 @@ class ContinuousDQNAgent:
 
     def train_model(self, num_episodes, optimise=True):
         for i_episode in range(num_episodes):
+            print(len(self.memory))
             # Initialize the environment and state
             s = self.env.reset()
             self.init_states.append(self.env.state)

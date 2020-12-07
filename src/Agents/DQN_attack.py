@@ -179,7 +179,7 @@ if __name__ == "__main__":
 
     elif attack_type == 'universal':
         general_start = time.time()
-        for epoch in range(2):
+        for epoch in range(5):
             start = time.time()
             pretrain_attack_model(model_type=cfg.params['MODEL_TYPE'], epoch=epoch)
             print('time', time.time() - start)

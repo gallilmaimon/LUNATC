@@ -336,9 +336,9 @@ def replace_with_synonym(text, word_index, sess, topn=10, word_sim_thresh=0.6,
     # work with single sentence only (that of the given word)
     new_text, new_word_index = get_sentence_of_word_index(text, word_index)
     # look in cache of previously calculated actions
-    # if (new_text, int(new_word_index)) in synonym_act_dict:
-    #     rep_word = synonym_act_dict[(new_text, int(new_word_index))]
-    #     return replace_word(text, word_index, rep_word)
+    if (new_text, int(new_word_index)) in synonym_act_dict:
+        rep_word = synonym_act_dict[(new_text, int(new_word_index))]
+        return replace_word(text, word_index, rep_word)
 
     # Get the list of words from the entire text
     words = new_text.split()
@@ -421,12 +421,10 @@ def replace_with_synonym_perplexity(text, word_index, sess, topn=10, word_sim_th
     # work with single sentence only (that of the given word)
     new_text, new_word_index = get_sentence_of_word_index(text, word_index)
 
-    # new_text, new_word_index = text, word_index
-
     # look in cache of previously calculated actions
-    # if (new_text, int(new_word_index)) in synonym_act_dict:
-    #     rep_word = synonym_act_dict[(new_text, int(new_word_index))]
-    #     return replace_word(text, word_index, rep_word)
+    if (new_text, int(new_word_index)) in synonym_act_dict:
+        rep_word = synonym_act_dict[(new_text, int(new_word_index))]
+        return replace_word(text, word_index, rep_word)
 
     # Get the list of words from the entire text
     words = new_text.split()
@@ -769,12 +767,16 @@ def misspell(text, word_ind):
 #     # some_text = "a classic 80's movie that disney for some reason stopped making . i watched this movie everyday when i was in like 6th grade . i found a copy myself after scouring video stores . well worth it though . one of my all time favs"
 #     # some_text = 'this film is not at all as bad as some people on here are saying . i think it has got a decent horror plot and the acting seem normal to me . people are way over - exagerating what was wrong with this . it is simply classic horror , the type without a plot that we have to think about forever and forever . we can just sit back , relax , and be scared .'
 #     # some_text = "the story starts out with a soldier being transported to a desert town then goes back in time to tell the tale of how he came to this place . he started out as an officer in napoleon's army fighting in egypt but became separated from his unit . after nearly starving and / or dying of thirst he came upon a leopard which somehow became his bosom buddy . it brought him food and before long the soldier became almost totally wild so acute was his bonding with the animal . all things do end however and the man decided it was necessary for him to leave the critter . a very strange film , well written and portrayed . beautiful scenery from jordan and utah which didn't always blend perfectly , but who cares ."
-#     some_text = 'a brutally straightforward tale of murder and capital punishment by the state . so painfully slow and accurate in the description of capital punishment ( from the preparation of the gallow to the victim p *** ing in his own pants before dying ) it has the power to change your mind about death penalty . the whole dekalog originated from this story : the dekalog screenwriter was the powerless lawyer unsuccessfully trying to defend and then console the accused .'
+#     # some_text = 'a brutally straightforward tale of murder and capital punishment by the state . so painfully slow and accurate in the description of capital punishment ( from the preparation of the gallow to the victim p *** ing in his own pants before dying ) it has the power to change your mind about death penalty . the whole dekalog originated from this story : the dekalog screenwriter was the powerless lawyer unsuccessfully trying to defend and then console the accused .'
+#     some_text = "ok , so maybe it's because i'm from the north east of scotland and i talk just like the guys in this film , but i found this great fun . cheap fun to be sure , but plenty of effort has gone into making the film look great and the actors certainly give it all . i was actually quite effected when they died . in particulare when the captain finally fell . the script ? well it ; s a game of 2 halfs . the opening half of the film is well written and sharp . the last half hour is not so great , with many questions left unanswered . this will doubtless annoy others as it annoyed me . but nevertheless , good fun and a very smart first feature from sturton ."
 #
 #     sess = tf.Session()
 #     sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
 #
 #     for some_i in range(len(some_text.split())):
 #         print(f"--------{some_i}--------------")
-#         print(replace_with_synonym_perplexity(some_text, some_i, sess, debug=False, lm=model, tokeniser=tokenizer))
-#         print(replace_with_synonym(some_text, some_i, sess, debug=False))
+#         ppl_text = replace_with_synonym_perplexity(some_text, some_i, sess, debug=False, lm=model, tokeniser=tokenizer)
+#         syn_text = replace_with_synonym(some_text, some_i, sess, debug=False)
+#         if ppl_text != syn_text:
+#             print(ppl_text)
+#             print(syn_text)
