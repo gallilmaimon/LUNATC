@@ -1,14 +1,15 @@
 # imports
 import numpy as np
 from copy import deepcopy as copy
-from src.Environments.utils.action_utils import get_similarity, replace_with_synonym, possible_actions
+from src.Environments.utils.action_utils import replace_with_synonym_perplexity, replace_with_synonym, possible_actions
 
 from src.Environments.Environment import Environment
 
 
 class ContinuousSynonymEnvironment(Environment):
-    def __init__(self, max_sent_len, sent_list, sess, init_sentence=None, text_model=None, max_turns=30):
-        super().__init__(max_sent_len, sent_list, sess, init_sentence, text_model, max_turns)
+    def __init__(self, max_sent_len, sent_list, sess, init_sentence=None, text_model=None, max_turns=30, ppl_diff=False,
+                 device='cuda'):
+        super().__init__(max_sent_len, sent_list, sess, init_sentence, text_model, max_turns, ppl_diff, device)
 
     def reset(self, init_sentence=None):
         # end previous episode
@@ -45,6 +46,8 @@ class ContinuousSynonymEnvironment(Environment):
 
     def delta(self, s, a):
         # replace with synonym
+        if self.ppl_diff:
+            return replace_with_synonym_perplexity(s, a, self.sess, lm=self.lm, tokeniser=self.tokenizer)
         return replace_with_synonym(s, a, self.sess)
 
     def step(self, a):

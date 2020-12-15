@@ -1,12 +1,21 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from src.Environments.utils.action_utils import get_similarity
+from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 
 
 class Environment(ABC):
     @abstractmethod
-    def __init__(self, max_sent_len, sent_list, sess, init_sentence=None, text_model=None, max_turns=30):
+    def __init__(self, max_sent_len, sent_list, sess, init_sentence=None, text_model=None, max_turns=30,
+                 ppl_diff=False, device='cuda'):
         self.text_model = text_model
+        self.ppl_diff = ppl_diff
+        self.lm = GPT2LMHeadModel.from_pretrained('gpt2').to(device) if ppl_diff else None
+        self.tokenizer = GPT2TokenizerFast.from_pretrained('gpt2') if ppl_diff else None
+        if ppl_diff:
+            self.tokenizer.padding_side = "right"
+            self.tokenizer.pad_token = self.tokenizer.eos_token  # to avoid an error
+
         self.max_sent_len = max_sent_len
         self.history = []
         self.score = None
@@ -50,7 +59,13 @@ class Environment(ABC):
 
     @abstractmethod
     def r(self, a):
-        new_s = self.delta(self.state, a)
+        if self.ppl_diff:
+            new_s, ppl_diff = self.delta(self.state, a)
+        else:
+            new_s = self.delta(self.state, a)
+            ppl_diff = 0
+
+        ppl_diff = min(ppl_diff, 0)
 
         # actions with no effect get negative reward
         if new_s == self.state:
@@ -65,9 +80,9 @@ class Environment(ABC):
 
         self.cur_prob = new_proba
         if np.argmax(new_proba) == self.original_class:
-            return logit_diff, False, new_s
+            return logit_diff + ppl_diff, False, new_s
 
-        return 100 * get_similarity([self.init_sentence, new_s], self.sess)[0] + logit_diff, True, new_s
+        return 100 * get_similarity([self.init_sentence, new_s], self.sess)[0] + logit_diff + ppl_diff, True, new_s
 
     @abstractmethod
     def get_legal_moves(self):

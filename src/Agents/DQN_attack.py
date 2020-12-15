@@ -180,7 +180,9 @@ if __name__ == "__main__":
     attack_type = cfg.params['ATTACK_TYPE']
     # attack each text separately
     if attack_type == 'individual':
+        t1 = time.time()
         attack_individually(model_type=cfg.params['MODEL_TYPE'])
+        print(time.time() - t1)
 
     elif attack_type == 'universal':
         general_start = time.time()

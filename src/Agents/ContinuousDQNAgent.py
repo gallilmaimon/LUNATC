@@ -76,7 +76,8 @@ class ContinuousDQNAgent:
         sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
         self.env = ContinuousSynonymEnvironment(n_actions, sent_list, sess, init_sentence=None, text_model=text_model,
-                                                max_turns=cfg.params["MAX_TURNS"])
+                                                max_turns=cfg.params["MAX_TURNS"], ppl_diff=cfg.params['USE_PPL'],
+                                                device=device)
 
         self.policy_net = ContinuousDQNNet(self.state_shape, self.action_shape).to(device)
         self.target_net = ContinuousDQNNet(self.state_shape, self.action_shape).to(device)
