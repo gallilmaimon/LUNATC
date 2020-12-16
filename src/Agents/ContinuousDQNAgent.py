@@ -30,7 +30,6 @@ cfg = Config(LIB_DIR + "src/Config/DQN_constants.yml")
 base_path = cfg.params["base_path"]
 # endregion constants
 
-import time
 
 class ContinuousDQNNet(nn.Module):
     def __init__(self, s_shape, a_shape):
@@ -101,6 +100,7 @@ class ContinuousDQNAgent:
         self.eps_decay = cfg.params['EPS_DECAY']
         self.batch_size = cfg.params['BATCH_SIZE']
         self.target_update = cfg.params['TARGET_UPDATE']
+        self.policy_update = cfg.params['POLICY_UPDATE']
 
         self.steps_done = 0
         self.rewards = []
@@ -251,13 +251,6 @@ class ContinuousDQNAgent:
         with open(path + '/memory.pkl', 'rb') as f:
             self.memory = pickle.load(f)
 
-    # def _get_embedded_actions(self, text, legal_moves):
-    #     if len(legal_moves) == 0:
-    #         return None
-    #     mask = torch.zeros(len(legal_moves), 100, device=self.device)
-    #     mask[(torch.arange(len(legal_moves)), legal_moves)] = 1
-    #     return mask
-
     def _get_td_error(self, s, embedded_a, s_new, r, new_legal_embedded_a):
         with torch.no_grad():
             pred_q = self.policy_net(torch.cat([s, embedded_a], axis=1))
@@ -273,6 +266,7 @@ class ContinuousDQNAgent:
             return F.smooth_l1_loss(calc_q.view(-1), pred_q.view(-1)).cpu().numpy()
 
     def train_model(self, num_episodes, optimise=True):
+        update_count = 0
         for i_episode in range(num_episodes):
             # Initialize the environment and state
             s = self.env.reset()
@@ -286,6 +280,7 @@ class ContinuousDQNAgent:
             s = self.norm.normalize(s) if self.norm is not None else s
 
             while not done:
+                update_count += 1
                 # Select and perform an action
                 action, emb_a = self.select_action(s, self.env.legal_moves, embedded_a)
 
@@ -317,7 +312,7 @@ class ContinuousDQNAgent:
                 embedded_a = new_emb_a
 
                 # Perform one step of the optimization
-                self._optimize_model() if optimise else ''
+                self._optimize_model() if optimise and update_count % self.policy_update == 0 else ''
                 if done:
                     self.final_states.append(self.env.state)
                     self.rewards.append(tot_reward.item())
