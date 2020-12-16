@@ -148,7 +148,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
 
     cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
     os.makedirs(cur_path, exist_ok=True)
-    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml", f"{cur_path}/DQN_constants.yml")
+    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml", f"{cur_path}/DQN_constants.yml") if epoch == 0 else ''
 
     # define agent
     dqn = None
