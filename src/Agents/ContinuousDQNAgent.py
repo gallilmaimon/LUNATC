@@ -162,7 +162,6 @@ class ContinuousDQNAgent:
         stacked_input = torch.cat([stacked_next_state, next_state_actions], dim=1)
         net_out = self.policy_net(stacked_input).view(-1, self.n_actions)
 
-        # TODO: make more efficient
         mask = torch.zeros(net_out.shape[0], net_out.shape[1] + 1, dtype=net_out.dtype, device=net_out.device)
         mask[(torch.arange(net_out.shape[0]), legal_count)] = 1
         mask = mask.cumsum(dim=1)[:, :-1]

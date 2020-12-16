@@ -19,9 +19,7 @@ from src.Agents.utils.vis_utils import log_results
 from src.Agents.utils.optim_utils import seed_everything
 
 
-from src.Agents.Memory.ReplayMemory import Transition
 import torch
-from src.Agents.Memory.PrioritisedMemory import PrioritisedMemory
 
 # configuration
 from src.Config.Config import Config
@@ -63,7 +61,7 @@ def attack_individually(model_type: str = "e2e"):
     os.makedirs(cur_path, exist_ok=True)
     shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml", f"{cur_path}/DQN_constants.yml")
     for n in eval(cfg.params['ATTACKED_INDICES']):
-        seed_everything(42)
+        seed_everything(cfg.params['SEED'])
         # get current text
         cur_df = df.iloc[n:n + 1]
         sent_list = list(cur_df.content.values)
@@ -109,7 +107,7 @@ def attack_individually(model_type: str = "e2e"):
 
 def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     """this model pretrains a single network on the data given"""
-    seed_everything(41)
+    seed_everything(cfg.params['SEED'])
     # initialise parameters
     device = cfg.params["DEVICE"]
     state_shape = cfg.params["STATE_SHAPE"]
