@@ -22,7 +22,6 @@ from src.Agents.utils.optim_utils import seed_everything
 from src.Agents.Memory.ReplayMemory import Transition
 import torch
 from src.Agents.Memory.PrioritisedMemory import PrioritisedMemory
-import pickle
 
 # configuration
 from src.Config.Config import Config

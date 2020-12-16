@@ -30,6 +30,7 @@ cfg = Config(LIB_DIR + "src/Config/DQN_constants.yml")
 base_path = cfg.params["base_path"]
 # endregion constants
 
+import time
 
 class ContinuousDQNNet(nn.Module):
     def __init__(self, s_shape, a_shape):
@@ -171,25 +172,22 @@ class ContinuousDQNAgent:
 
         chosen_actions = net_out.argmax(1) + torch.arange(start=0, end=self.n_actions*len(non_final_next_states)-1,
                                                           step=self.n_actions, device=self.device)
-
         # input selected actions to target net
         target_net_input = torch.cat([non_final_next_states, next_state_actions.index_select(0, chosen_actions)], dim=1)
         next_state_values[non_final_mask] = self.target_net(target_net_input).view(-1)
 
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
-
         # Compute Huber loss
-        # loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none')
-        loss = F.mse_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none')
+        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none')
 
         if type(self.memory) == ReplayMemory:
             weighted_loss = loss.mean()
         elif type(self.memory) == PrioritisedMemory:
             weighted_loss = (torch.FloatTensor(is_weight).to(self.device) * loss.view(-1)).mean()
-            # weighted_loss = loss.mean()
+
             # update priorities
-            loss2 = F.mse_loss(state_action_values, expected_state_action_values.unsqueeze(1), reduction='none').view(-1).detach().cpu().numpy()
+            loss2 = torch.clone(loss).view(-1).detach().cpu().numpy()
             for j in range(len(loss2)):
                 self.memory.update(idx[j], loss2[j])
 
@@ -273,7 +271,7 @@ class ContinuousDQNAgent:
                 next_q = self.policy_net(torch.cat([s_new, new_legal_embedded_a[chosen_a].unsqueeze(0)], axis=1))
                 calc_q = r + self.gamma * next_q
 
-            return F.mse_loss(calc_q.view(-1), pred_q.view(-1)).cpu().numpy()
+            return F.smooth_l1_loss(calc_q.view(-1), pred_q.view(-1)).cpu().numpy()
 
     def train_model(self, num_episodes, optimise=True):
         for i_episode in range(num_episodes):

@@ -4,9 +4,8 @@ from src.TextModels.TextModel import TextModel
 
 # bert
 import torch
-# from pytorch_pretrained_bert import BertModel
 from transformers import BertForSequenceClassification, BertTokenizer, BertModel, BertConfig
-from src.TextModels.text_model_utils import embed_sentence_mean_layer11, pad_sequences, embed_texts
+from src.TextModels.text_model_utils import pad_sequences, embed_texts
 
 
 class E2EBertTextModel(TextModel):
@@ -30,6 +29,9 @@ class E2EBertTextModel(TextModel):
         self.bert_model.to(device)
         self.device = device
 
+        self.proba_cache = dict()
+        self.embed_cache = dict()
+
     def train(self, X, y):
         # At the moment only accepts pre-trained models for class simplicity
         raise NotImplementedError
@@ -39,10 +41,16 @@ class E2EBertTextModel(TextModel):
         raise NotImplementedError
 
     def embed(self, X):
-        return embed_texts(X, self.bert_model, self.bert_tokeniser, device=self.device)
-        # return embed_sentence_mean_layer11(X, self.bert_model, self.bert_tokeniser, self.device)
+        if X in self.embed_cache:
+            return self.embed_cache[X]
+        embed = embed_texts(X, self.bert_model, self.bert_tokeniser, device=self.device)
+        self.embed_cache[X] = embed
+        return embed
 
     def predict_proba(self, X):
+        if X in self.proba_cache:
+            return self.proba_cache[X]
+
         self.model.eval()
         with torch.no_grad():
             sent_token = torch.Tensor(pad_sequences([self.bert_tokeniser.encode(X, add_special_tokens=True)],
@@ -51,6 +59,7 @@ class E2EBertTextModel(TextModel):
             # res = F.softmax(self.model(sent_token, attention_mask=sent_att)[0])
             res = self.model(sent_token, attention_mask=sent_att)[0]
             probs = res.detach().cpu().numpy()
+        self.proba_cache[X] = probs
         return probs
 
     def predict(self, X):
