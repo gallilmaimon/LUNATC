@@ -280,42 +280,20 @@ def clean_text(text):
     return text
 
 
-# def get_perplexity(texts, lm, tokeniser, device):
-#     try:
-#         # efficent batch proccessing works only when texts have same token length
-#         # otherwise (ValueError raised) we revert to loop.
-#         encodings = tokeniser(texts, return_tensors='pt')
-#         inp = encodings.input_ids.to(device)
-#         with torch.no_grad():
-#             ll = lm(inp)
-#
-#         shift_logits = ll[0][..., :-1, :].contiguous()
-#         shift_labels = inp[..., 1:].contiguous()
-#         loss_fct = torch.nn.CrossEntropyLoss(reduction='none')
-#         return torch.exp(loss_fct(shift_logits.transpose(1, 2), shift_labels).mean(axis=1))
-#
-#     except ValueError:
-#         ppl = torch.empty(len(texts))
-#         for i, text in enumerate(texts):
-#             encodings = tokeniser(text, return_tensors='pt')
-#             inp = encodings.input_ids.to(device)
-#             with torch.no_grad():
-#                 ll = lm(inp, labels=inp)
-#             ppl[i] = torch.exp(ll[0])
-#         return ppl
-
-
 def get_perplexity(texts, lm, tokeniser, device):
     encodings = tokeniser(texts, return_tensors='pt', padding=True)
     inp = encodings.input_ids.to(device)
     att_mask = encodings.attention_mask.to(device)
     with torch.no_grad():
         ll = lm(inp, attention_mask=att_mask)
-    shift_logits = ll[0][..., :-1, :].contiguous()
-    shift_labels = inp[..., 1:].contiguous()
-    loss_fct = torch.nn.CrossEntropyLoss(reduction='none')
-    weighted_loss = loss_fct(shift_logits.transpose(1, 2), shift_labels) * att_mask[..., 1:]  # used to ignore padding
-    return torch.exp(weighted_loss.sum(axis=1) / att_mask[..., 1:].sum(axis=1))
+
+        shift_logits = ll[0][..., :-1, :].contiguous()
+        shift_labels = inp[..., 1:].contiguous()
+        loss_fct = torch.nn.CrossEntropyLoss(reduction='none')
+        # loss = loss_fct(shift_logits.transpose(1, 2).half(), shift_labels)
+        loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)).view(shift_labels.shape)
+        weighted_loss = loss * att_mask[..., 1:]  # used to ignore padding
+        return torch.exp(weighted_loss.sum(axis=1) / att_mask[..., 1:].sum(axis=1))
 
 
 # endregion utility functions
@@ -476,6 +454,15 @@ def replace_with_synonym_perplexity(text, word_index, sess, topn=30, word_sim_th
         rep_options = list(rep_options)
     print('same POS', rep_options) if debug else ''
 
+    # whole text is used for perplexity as opposed to sentence only for similarity
+    text_options = []
+    all_words = text.split()
+    for opt in rep_options:
+        all_words[word_index] = opt
+        text_options.append(' '.join(all_words))
+
+    text_perplexity = get_perplexity([text] + text_options, lm, tokeniser, device='cuda')
+
     # get sentence similarity to original and perplexity
     sent_options = []
     for opt in rep_options:
@@ -484,13 +471,6 @@ def replace_with_synonym_perplexity(text, word_index, sess, topn=30, word_sim_th
     sentence_similarity = get_similarity([new_text] + sent_options, sess)
     print('sentence similarity', sentence_similarity) if debug else ''
 
-    # whole text is used for perplexity as opposed to sentence only for similarity
-    text_options = []
-    all_words = text.split()
-    for opt in rep_options:
-        all_words[word_index] = opt
-        text_options.append(' '.join(all_words))
-    text_perplexity = get_perplexity([text] + text_options, lm, tokeniser, device='cuda')
     ppl_diff = (text_perplexity[1:] - text_perplexity[0]).cpu().numpy()
     print('text perplexity difference', ppl_diff) if debug else ''
     combined_score = (sentence_similarity**4) * 100 - ppl_diff*1
@@ -498,7 +478,6 @@ def replace_with_synonym_perplexity(text, word_index, sess, topn=30, word_sim_th
 
     best_option = np.argmax(combined_score)
     print(best_option) if debug else ''
-
     if combined_score[best_option] >= sentence_sim_thresh:
         synonym_act_dict[(text, int(word_index))] = rep_options[best_option], -ppl_diff[best_option]
         return replace_word(text, word_index, rep_options[best_option]), -ppl_diff[best_option]
@@ -775,17 +754,18 @@ def misspell(text, word_ind):
 # if __name__ == '__main__':
 #     device = 'cuda'
 #     model_id = 'gpt2'
-#     model = GPT2LMHeadModel.from_pretrained(model_id).to(device)
+#     model = GPT2LMHeadModel.from_pretrained(model_id).to(device).half()
+#     model2 = GPT2LMHeadModel.from_pretrained(model_id).to(device)
 #     tokenizer = GPT2TokenizerFast.from_pretrained(model_id)
 #
 #     tokenizer.padding_side = "right"
 #     tokenizer.pad_token = tokenizer.eos_token  # to avoid an error
 #
-#     some_text = 'this movie was awesome , if you want a movie with non - stop puns and laughter then this is right for you . this movie was great because it took the serious robin hood and made it something the whole family can enjoy and get a good laugh at . i first viewed this movie when i was around 10, and got most of it . this movie is also great because it makes fun of everything involved , " by order of the kings financial secretary h and r blockhead ?" everyone needs a little cary elwes ( robin hood ) in life , whether or not its liar liar with the " claw " or saw . this movie is worth watching'
+#     # some_text = 'this movie was awesome , if you want a movie with non - stop puns and laughter then this is right for you . this movie was great because it took the serious robin hood and made it something the whole family can enjoy and get a good laugh at . i first viewed this movie when i was around 10, and got most of it . this movie is also great because it makes fun of everything involved , " by order of the kings financial secretary h and r blockhead ?" everyone needs a little cary elwes ( robin hood ) in life , whether or not its liar liar with the " claw " or saw . this movie is worth watching'
 #     # some_text = "here is a movie of adventure , determination , heroism , & bravery . plus , it's set back in the late 1800s which makes it even more interesting . it's a wonderful , adventurous storyline , and alyssa milano is wonderful at playing the wholesome , confident , no - nonsense fizzy ... a great role - model . this is one of my favorite movies . it is a movie to be watched again and again and will inspire you and enrich your life without a doubt . not only is the storyline excellent , but the movie also has fabulous scenery and music and is wonderfully directed . this movie is as good as gold !"
 #     # some_text = "finally !!! a good movie made on the most demented serial killer in history . for those less familiar with ed gein , he was basically the madman who was known for grave robbing and skinning his victims ( which most horror fans ripped off ). shot in a period style that reflects the bleak plains of wisconsin perfectly , this is easily the most atmospheric horror film yet to depict gein and his gruesome killings . kane hodder ( jason from friday the 13th series ) and michael berryman ( hills have eyes i & ii ), deliver chilling performances in this serial killer opus that easily leaves behind the lackluster former gein attempts . so far i'd say this is one of the better horror films released this year ( turistas = 0)."
 #     # some_text = 'it doesn\'t matter whether drew or leelee are total babes , but there are a lot of girls who are so pretty and hot but they appear to be so nerdy . this movie is not oscar type of movie but it has at least a good point of view of what life is like for young people or for " real " people . it made us laugh and learn to accept others for who they really are . this movie represents the real world and that what really matters .'
-#     # some_text = "i loved this thing . the most wonderful thing about pink flamingos is that it strives desperately to be in horrible taste , but has really gained a cult following world wide . says a lot about us ( us being people ) doesn't it . pink flamingos succeeds because waters made the film he wanted to make . a film need not be disgusting to succeed , but it may be . when you watch this film , you see things that are disgusting , but are ultimately brilliant because they are freely displayed . what we have here is an honest piece of personal creative expression . everyone who ever cares to succeed as an artist , be it in film or any other media , should watch this film ."
+#     some_text = "i loved this thing . the most wonderful thing about pink flamingos is that it strives desperately to be in horrible taste , but has really gained a cult following world wide . says a lot about us ( us being people ) doesn't it . pink flamingos succeeds because waters made the film he wanted to make . a film need not be disgusting to succeed , but it may be . when you watch this film , you see things that are disgusting , but are ultimately brilliant because they are freely displayed . what we have here is an honest piece of personal creative expression . everyone who ever cares to succeed as an artist , be it in film or any other media , should watch this film ."
 #     # some_text = "this is the first pepe le pew cartoon and in some ways it's very similar to the later ones but in a few other odd ways it is not . while the object of pepe's affections is a cat , oddly it appears to be a boy cat ! this whole predicament occurs because a cat is tired of being abused by others and dresses up like a skunk and tries to smell like a skunk so it can be left alone . unfortunately , this attracts our hero , pepe . most of the action is pretty typical until the very funny and unexpected ending -- and this actually makes this one of the best of all cartoons in the series . excellent animation ( though the style is different than later examples ), excellent writing and a good sense of humor make this one a keeper ."
 #     # some_text = "drive was an enjoyable episode with a dark ending . basically a man and his wife are infected in their inner ear by a high pitched sound wave being emitted by some military equipment . some favorite parts of mine from this episode are mulder's dialogue in the car , and the scene where scully goes in with the hazmat team and find the little old deaf lady completely unaffected by what they thought was a virus . the ending of course is tragic in its realism because it leads the viewer to believe that they are going to actually be able to pull off this elaborate plan to save the victim but when mulder arrives the man is already dead . 8/10"
 #     # some_text = 'you don\'t have to be a fan of the cartoon show to enjoy this film . i watched it for the first time when i was nine , having been a fan of the t.v show , and my parents laughed just as hard as i did . it is done in the classic style of bugs bunny cartoons from yesterday , and considering todays vulgar cartoons , i would think anybody would appreciate a cartoon movie that relies more on " wackiness " then on vulgarity , to get a few laughs .'
@@ -798,20 +778,28 @@ def misspell(text, word_ind):
 #     sess = tf.Session()
 #     sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
 #
-#     for some_i in range(len(some_text.split())):
-#         print(f"--------{some_i}--------------")
-#         ppl_text = replace_with_synonym_perplexity(some_text, some_i, sess, debug=False, lm=model, tokeniser=tokenizer)[0]
-#         syn_text = replace_with_synonym_perplexity(some_text, some_i, sess, debug=False, lm=model, tokeniser=tokenizer, topn=25)[0]
-#         # syn_text = replace_with_synonym(some_text, some_i, sess, debug=False)
-#         if ppl_text != syn_text:
-#             print(ppl_text)
-#             print(syn_text)
-#         elif ppl_text != some_text:
-#             print(ppl_text)
+#     # for i in range(len(some_text.split())):
+#     #     print(f"--------{i}--------------")
+#     #     ppl_text = replace_with_synonym_perplexity(some_text, i, sess, debug=False, lm=model, tokeniser=tokenizer)[0]
+#     #     syn_text = replace_with_synonym_perplexity(some_text, i, sess, debug=False, lm=model2, tokeniser=tokenizer)[0]
+#     #     # syn_text = replace_with_synonym(some_text, some_i, sess, debug=False)
+#     #     if ppl_text != syn_text:
+#     #         print(ppl_text)
+#     #         print(syn_text)
+#     #     elif ppl_text != some_text:
+#     #         print(ppl_text)
 #
 #     # t0 = time.time()
 #     # for j in range(10):
-#     #     for some_i in range(len(some_text.split())):
-#     #         ppl_text = replace_with_synonym_perplexity(some_text, some_i, sess, debug=False, lm=model, tokeniser=tokenizer, topn=10)
-#     #         # syn_text = replace_with_synonym(some_text, some_i, sess, debug=False)
+#     #     for i in range(len(some_text.split())):
+#     #         ppl_text = replace_with_synonym_perplexity(some_text, i, sess, debug=False, lm=model, tokeniser=tokenizer, topn=30)
+#     #         # syn_text = replace_with_synonym(some_text, i, sess, debug=False)
 #     # print(time.time() - t0)
+#
+#     t0 = time.time()
+#     for j in range(10):
+#         for i in range(len(some_text.split())):
+#             ppl_text = replace_with_synonym_perplexity(some_text, i, sess, debug=False, lm=model2,
+#                                                        tokeniser=tokenizer, topn=30)
+#             # syn_text = replace_with_synonym(some_text, i, sess, debug=False)
+#     print(time.time() - t0)

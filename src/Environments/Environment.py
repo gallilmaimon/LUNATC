@@ -10,7 +10,7 @@ class Environment(ABC):
                  ppl_diff=False, device='cuda'):
         self.text_model = text_model
         self.ppl_diff = ppl_diff
-        self.lm = GPT2LMHeadModel.from_pretrained('gpt2').to(device) if ppl_diff else None
+        self.lm = GPT2LMHeadModel.from_pretrained('gpt2').to(device).half() if ppl_diff else None
         self.tokenizer = GPT2TokenizerFast.from_pretrained('gpt2') if ppl_diff else None
         if ppl_diff:
             self.tokenizer.padding_side = "right"
