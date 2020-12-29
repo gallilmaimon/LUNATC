@@ -57,7 +57,7 @@ def attack_individually(model_type: str = "e2e"):
     data_path = base_path + '_sample.csv'
     df = pd.read_csv(data_path)
 
-    cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
+    cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results_full_nat_02"
     os.makedirs(cur_path, exist_ok=True)
     shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml", f"{cur_path}/DQN_constants.yml")
     for n in eval(cfg.params['ATTACKED_INDICES']):
@@ -97,8 +97,6 @@ def attack_individually(model_type: str = "e2e"):
             # dqn.norm = norm
 
             dqn.train_model(cfg.params['NUM_EPISODES'])
-
-            torch.save(dqn.policy_net.state_dict, LIB_DIR + '/data/aclImdb/agent_new.pth')
             log_results(dqn, handle_out, f"{cur_path}/{n}.csv")
         except KeyboardInterrupt:
             log_results(dqn, handle_out, f"{cur_path}/{n}.csv")

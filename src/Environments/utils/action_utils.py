@@ -290,7 +290,6 @@ def get_perplexity(texts, lm, tokeniser, device):
         shift_logits = ll[0][..., :-1, :].contiguous()
         shift_labels = inp[..., 1:].contiguous()
         loss_fct = torch.nn.CrossEntropyLoss(reduction='none')
-        # loss = loss_fct(shift_logits.transpose(1, 2).half(), shift_labels)
         loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)).view(shift_labels.shape)
         weighted_loss = loss * att_mask[..., 1:]  # used to ignore padding
         return torch.exp(weighted_loss.sum(axis=1) / att_mask[..., 1:].sum(axis=1))

@@ -80,9 +80,9 @@ class Environment(ABC):
 
         self.cur_prob = new_proba
         if np.argmax(new_proba) == self.original_class:
-            return logit_diff + ppl_diff, False, new_s
+            return logit_diff + 0.2 * ppl_diff, False, new_s
 
-        return 100 * get_similarity([self.init_sentence, new_s], self.sess)[0] + logit_diff + ppl_diff, True, new_s
+        return 100 * get_similarity([self.init_sentence, new_s], self.sess)[0] + logit_diff + 0.2 * ppl_diff, True, new_s
 
     @abstractmethod
     def get_legal_moves(self):
