@@ -31,9 +31,9 @@ base_path = cfg.params["base_path"]
 # endregion constants
 
 
-class ContinuousDQNNet(nn.Module):
+class ContinuousDQNNetLarge(nn.Module):
     def __init__(self, s_shape, a_shape):
-        super(ContinuousDQNNet, self).__init__()
+        super(ContinuousDQNNetLarge, self).__init__()
         self.linear1 = nn.Linear(s_shape + a_shape, 500)
         self.relu1 = nn.LeakyReLU()
 
@@ -64,6 +64,28 @@ class ContinuousDQNNet(nn.Module):
         return self.out(x)
 
 
+class ContinuousDQNNetSmall(nn.Module):
+    def __init__(self, s_shape, a_shape):
+        super(ContinuousDQNNetSmall, self).__init__()
+        print('here')
+        self.linear1 = nn.Linear(s_shape + a_shape, 500)
+        self.relu1 = nn.LeakyReLU()
+
+        self.linear2 = nn.Linear(500, 200)
+        self.relu2 = nn.LeakyReLU()
+
+        self.linear3 = nn.Linear(200, 32)
+        self.relu3 = nn.LeakyReLU()
+
+        self.out = nn.Linear(32, 1)
+
+    def forward(self, x):
+        x = self.relu1(self.linear1(x))
+        x = self.relu2(self.linear2(x))
+        x = self.relu3(self.linear3(x))
+        return self.out(x)
+
+
 class ContinuousDQNAgent:
     def __init__(self, sent_list, text_model, n_actions, norm=None, device='cuda', mem_size=10000):
         self.state_shape = cfg.params["STATE_SHAPE"]
@@ -79,8 +101,9 @@ class ContinuousDQNAgent:
                                                 max_turns=cfg.params["MAX_TURNS"], ppl_diff=cfg.params['USE_PPL'],
                                                 device=device)
 
-        self.policy_net = ContinuousDQNNet(self.state_shape, self.action_shape).to(device)
-        self.target_net = ContinuousDQNNet(self.state_shape, self.action_shape).to(device)
+        net_type = ContinuousDQNNetLarge if cfg.params['ATTACK_TYPE'] == 'universal' or cfg.params['USE_PPL'] else ContinuousDQNNetSmall
+        self.policy_net = net_type(self.state_shape, self.action_shape).to(device)
+        self.target_net = net_type(self.state_shape, self.action_shape).to(device)
 
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
@@ -92,6 +115,15 @@ class ContinuousDQNAgent:
         # Glove embeddings for action embedding
         glove_path = '/resources/word_vectors/glove.6B.200d.txt'  # TODO: make configurable
         self.word2vec = load_embedding_dict(LIB_DIR + glove_path, torch.rand((1, 200)))  # TODO: make configurable
+        angle_rates = (1/10000) ** np.linspace(0, 1, 200//2)
+        positions = np.arange((cfg.params['MAX_SENT_LEN']))
+        angle_rads = (positions[:, np.newaxis]) * angle_rates[np.newaxis, :]
+        sines = np.sin(angle_rads)
+        cosines = np.cos(angle_rads)
+        pos_enc = np.empty((sines.shape[0], sines.shape[1] * 2))
+        pos_enc[:, 0::2] = sines
+        pos_enc[:, 1::2] = cosines
+        self.position_encoding = torch.tensor(pos_enc).type(torch.float32)
 
         # DQN parameters
         self.gamma = cfg.params['GAMMA']
@@ -204,7 +236,7 @@ class ContinuousDQNAgent:
             words = np.array(text.split())[legal_moves]
         else:
             words = np.array(text.split())[legal_moves.cpu()[0]]
-        return torch.cat([self.word2vec[word] for word in words]).to(self.device)
+        return torch.cat([self.word2vec[word] for word in words]).to(self.device)  # + 1 * self.position_encoding[legal_moves].to(self.device)
 
     def save_agent(self, path):
         os.makedirs(path, exist_ok=True)
