@@ -67,7 +67,6 @@ class ContinuousDQNNetLarge(nn.Module):
 class ContinuousDQNNetSmall(nn.Module):
     def __init__(self, s_shape, a_shape):
         super(ContinuousDQNNetSmall, self).__init__()
-        print('here')
         self.linear1 = nn.Linear(s_shape + a_shape, 500)
         self.relu1 = nn.LeakyReLU()
 
@@ -236,7 +235,7 @@ class ContinuousDQNAgent:
             words = np.array(text.split())[legal_moves]
         else:
             words = np.array(text.split())[legal_moves.cpu()[0]]
-        return torch.cat([self.word2vec[word] for word in words]).to(self.device)  # + 1 * self.position_encoding[legal_moves].to(self.device)
+        return torch.cat([self.word2vec[word] for word in words]).to(self.device) + 1 * self.position_encoding[legal_moves].to(self.device)
 
     def save_agent(self, path):
         os.makedirs(path, exist_ok=True)

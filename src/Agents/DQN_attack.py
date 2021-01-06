@@ -57,7 +57,7 @@ def attack_individually(model_type: str = "e2e"):
     data_path = base_path + '_sample.csv'
     df = pd.read_csv(data_path)
 
-    cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results_full_nat_02"
+    cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
     os.makedirs(cur_path, exist_ok=True)
     shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml", f"{cur_path}/DQN_constants.yml")
     for n in eval(cfg.params['ATTACKED_INDICES']):
