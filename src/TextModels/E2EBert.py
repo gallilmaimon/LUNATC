@@ -54,7 +54,7 @@ class E2EBertTextModel(TextModel):
         self.model.eval()
         with torch.no_grad():
             sent_token = torch.Tensor(pad_sequences([self.bert_tokeniser.encode(X, add_special_tokens=True)],
-                                                    128)).long().to(self.device)
+                                                    256)).long().to(self.device)
             sent_att = (sent_token > 0).int().to(self.device)
             # res = F.softmax(self.model(sent_token, attention_mask=sent_att)[0])
             res = self.model(sent_token, attention_mask=sent_att)[0]

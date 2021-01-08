@@ -3,7 +3,7 @@ import numpy as np
 from collections import defaultdict
 
 
-def embed_texts(texts, model, tokeniser, num_hiddens=4, maxlen=128, device="cuda"):
+def embed_texts(texts, model, tokeniser, num_hiddens=4, maxlen=256, device="cuda"):
     inputs = tokeniser(texts, padding=True, truncation=True, max_length=maxlen, pad_to_multiple_of=maxlen,
                        return_tensors='pt')
 
