@@ -2,6 +2,12 @@ import numpy as np
 import pandas as pd
 from copy import deepcopy
 
+# add base path so that can import other files from project
+import os
+import sys
+LIB_DIR = os.path.abspath(__file__).split('src')[0]
+sys.path.insert(1, LIB_DIR)
+
 from src.Agents.utils.pwws_utils import nlp, get_synonym_options, get_named_entity_replacements, \
     calculate_word_saliency, delta_p_star
 
@@ -43,7 +49,7 @@ def pwws_attack_text(text: str, text_model, sess, dataset: str, use_ne: bool = F
 
     sorted_substitutes = sorted(substitute_options, key=lambda t: t[2], reverse=True)
 
-    # perturb the text iteratively according tho the found order and options until attack is succesful
+    # perturb the text iteratively according tho the found order and options until attack is successful
     for (i, sub, _) in sorted_substitutes:
         words[i] = sub.lower()
         cur_sent = ' '.join(words)
@@ -54,7 +60,7 @@ def pwws_attack_text(text: str, text_model, sess, dataset: str, use_ne: bool = F
 
 
 if __name__ == '__main__':
-    cfg = Config("../Config/constants.yml")
+    cfg = Config(LIB_DIR + "src/Config/DQN_constants.yml")
     base_path = cfg.params["base_path"]
     MAX_TURNS = cfg.params["MAX_TURNS"]
     model_type = cfg.params["MODEL_TYPE"]

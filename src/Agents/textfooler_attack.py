@@ -2,6 +2,13 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from copy import deepcopy
+
+# add base path so that can import other files from project
+import os
+import sys
+LIB_DIR = os.path.abspath(__file__).split('src')[0]
+sys.path.insert(1, LIB_DIR)
+
 from src.TextModels.TextModel import TextModel
 from src.TextModels.TransferBert import TransferBertTextModel
 from src.TextModels.WordLSTM import WordLSTM
@@ -36,7 +43,7 @@ def attack_sent(sent: str, text_model: TextModel, max_turns: int, sess: tf.Sessi
 
 if __name__ == '__main__':
     # constants
-    cfg = Config("../Config/constants.yml")
+    cfg = Config(LIB_DIR + "src/Config/DQN_constants.yml")
     base_path = cfg.params["base_path"]
     MAX_TURNS = cfg.params["MAX_TURNS"]
     model_type = cfg.params["MODEL_TYPE"]

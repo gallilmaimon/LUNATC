@@ -18,9 +18,6 @@ from src.Agents.ContinuousDQNAgent import ContinuousDQNAgent
 from src.Agents.utils.vis_utils import log_results
 from src.Agents.utils.optim_utils import seed_everything
 
-
-import torch
-
 # configuration
 from src.Config.Config import Config
 
