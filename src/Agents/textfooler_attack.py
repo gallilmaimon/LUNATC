@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     # attack
     df = pd.read_csv(data_path)
-    df = df[df.preds == df.label]
+    # df = df[df.preds == df.label]
     df['best_sent'] = ''
     df['max_score'] = 0.
     for n in range(len(df)):
