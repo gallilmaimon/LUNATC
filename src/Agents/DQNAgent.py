@@ -15,6 +15,7 @@ LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
 from src.Environments.SynonymEnvironment import SynonymEnvironment
+from src.Environments.SynonymMisspellEnvironement import SynonymMisspellEnvironment
 from src.Environments.utils.action_utils import possible_actions
 from src.Agents.Memory.ReplayMemory import ReplayMemory, Transition
 
@@ -54,11 +55,23 @@ class DQNAgent:
         sess = tf.Session()
         sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
-        self.env = SynonymEnvironment(n_actions, sent_list, sess, init_sentence=None, text_model=text_model,
-                                      max_turns=cfg.params["MAX_TURNS"])
+        # initialise selected environment type
+        if cfg.params["ENV_TYPE"] == 'Synonym':
+            self.env = SynonymEnvironment(n_actions, sent_list, sess, init_sentence=None,
+                                          text_model=text_model, max_turns=cfg.params["MAX_TURNS"])
+        elif cfg.params["ENV_TYPE"] == 'SynonymMisspell':
+            self.env = SynonymMisspellEnvironment(n_actions, sent_list, sess, init_sentence=None,
+                                                  text_model=text_model, max_turns=cfg.params["MAX_TURNS"])
+        else:
+            print("Unsupported ENV_TYPE !")
+            exit(1)
 
-        self.policy_net = DQNNet(state_shape, n_actions).to(device)
-        self.target_net = DQNNet(state_shape, n_actions).to(device)
+        #
+        # self.env = SynonymEnvironment(n_actions, sent_list, sess, init_sentence=None, text_model=text_model,
+        #                               max_turns=cfg.params["MAX_TURNS"])
+
+        self.policy_net = DQNNet(state_shape, 2*n_actions).to(device)
+        self.target_net = DQNNet(state_shape, 2*n_actions).to(device)
 
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
@@ -158,7 +171,7 @@ class DQNAgent:
                     s_new = torch.Tensor(s_new).to(self.device).view(1, -1) if not done else None
                 tot_reward += reward
 
-                legal_moves = torch.zeros([1, self.n_actions], dtype=bool)
+                legal_moves = torch.zeros([1, 2*self.n_actions], dtype=bool)
                 legal_moves[:, possible_actions(self.env.state)] = True
 
                 # Store the transition in memory
