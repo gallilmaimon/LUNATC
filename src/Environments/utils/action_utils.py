@@ -33,7 +33,7 @@ if os.path.exists(LIB_DIR + "/resources/tf_hub_modules/USE"):
 else:
     print("Warning! local version of Universal Sentence Encoder model was not found trying to download. This may cause"
           "problems in runtime!")
-    embed = hub.Module("https://tfhub.dev/google/universal-sentence-encoder/2")
+    embed = hub.Module("https://tfhub.dev/google/universal-sentence-encoder/3")
 # synonym word embeddings
 word_vectors = KeyedVectors.load_word2vec_format(LIB_DIR +
                                                  "/resources/word_vectors/counter-fitted-vectors_formatted.txt",
@@ -346,8 +346,8 @@ def get_perplexity(texts, lm, tokeniser, device):
 
 
 # region actions
-def replace_with_synonym(text, word_index, sess, topn=30, word_sim_thresh=0.6,
-                         sentence_sim_thresh=0.6, debug=False):
+def replace_with_synonym(text, word_index, sess, topn=50, word_sim_thresh=0.9,
+                         sentence_sim_thresh=0.7, debug=False):
     """
     This function replaces the word at a given word_index (when splitting by spaces), of the given text with a synonym.
     The synonym is chosen by a series of steps. The whole process works only on the sentence in which the word is, for
@@ -431,7 +431,7 @@ def replace_with_synonym(text, word_index, sess, topn=30, word_sim_thresh=0.6,
     return text
 
 
-def replace_with_synonym_perplexity(text, word_index, sess, topn=30, word_sim_thresh=0.6,
+def replace_with_synonym_perplexity(text, word_index, sess, topn=50, word_sim_thresh=0.9,
                                     sentence_sim_thresh=-100, debug=False, lm=None, tokeniser=None):
     """
     This function replaces the word at a given word_index (when splitting by spaces), of the given text with a synonym.
@@ -532,8 +532,8 @@ def replace_with_synonym_perplexity(text, word_index, sess, topn=30, word_sim_th
     return text, 0
 
 
-def replace_with_synonym_all_text(text, word_index, sess, topn=10, word_sim_thresh=0.6,
-                                  sentence_sim_thresh=0.6, debug=False):
+def replace_with_synonym_all_text(text, word_index, sess, topn=50, word_sim_thresh=0.9,
+                                  sentence_sim_thresh=0.7, debug=False):
     """
     This function replaces the word at a given word_index (when splitting by spaces), of the given text with a synonym.
     The synonym is chosen by a series of steps. The whole process works on the whole text, as opposed to
@@ -617,8 +617,8 @@ def replace_with_synonym_all_text(text, word_index, sess, topn=10, word_sim_thre
     return text
 
 
-def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=50, word_sim_thresh=0.5,
-                                sentence_sim_thresh=0.5, debug=False):
+def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=50, word_sim_thresh=0.9,
+                                sentence_sim_thresh=0.7, debug=False):
     """
     This function replaces the word at a given word_index (when splitting by spaces), of the given text with a synonym.
     The synonym is chosen by a series of steps as presented in the paper - " Is BERT Really Robust? A Strong Baseline
