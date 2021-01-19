@@ -14,6 +14,7 @@ import tensorflow_hub as hub
 import nltk
 from gensim.models import KeyedVectors
 from nltk.corpus import stopwords
+# nltk.download('universal_tagset')
 
 # re-translation
 # from translate import Translator
@@ -35,7 +36,8 @@ else:
     embed = hub.Module("https://tfhub.dev/google/universal-sentence-encoder/2")
 # synonym word embeddings
 word_vectors = KeyedVectors.load_word2vec_format(LIB_DIR +
-                            "/resources/word_vectors/counter-fitted-vectors_formatted.txt", binary=False)
+                                                 "/resources/word_vectors/counter-fitted-vectors_formatted.txt",
+                                                 binary=False)
 
 # sentence similarity - placed globally to avoid leakage
 similarity_input_placeholder = tf.placeholder(tf.string, shape=(None))
@@ -164,14 +166,39 @@ contractions = {
     "you'll've": ["you shall have", "you will have"],
     "you're": ["you are"],
     "you've": ["you have"]
-    }
+}
 
 # stop words
-STOPWORDS = stopwords.words('english')
+# STOPWORDS = stopwords.words('english')
+STOPWORDS = ['a', 'about', 'above', 'across', 'after', 'afterwards', 'again', 'against', 'ain', 'all', 'almost',
+             'alone', 'along', 'already', 'also', 'although', 'am', 'among', 'amongst', 'an', 'and', 'another', 'any',
+             'anyhow', 'anyone', 'anything', 'anyway', 'anywhere', 'are', 'aren', "aren't", 'around', 'as', 'at',
+             'back', 'been', 'before', 'beforehand', 'behind', 'being', 'below', 'beside', 'besides', 'between',
+             'beyond', 'both', 'but', 'by', 'can', 'cannot', 'could', 'couldn', "couldn't", 'd', 'didn', "didn't",
+             'doesn', "doesn't", 'don', "don't", 'down', 'due', 'during', 'either', 'else', 'elsewhere', 'empty',
+             'enough', 'even', 'ever', 'everyone', 'everything', 'everywhere', 'except', 'first', 'for', 'former',
+             'formerly', 'from', 'hadn', "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'he', 'hence', 'her', 'here',
+             'hereafter', 'hereby', 'herein', 'hereupon', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'however',
+             'hundred', 'i', 'if', 'in', 'indeed', 'into', 'is', 'isn', "isn't", 'it', "it's", 'its', 'itself', 'just',
+             'latter', 'latterly', 'least', 'll', 'may', 'me', 'meanwhile', 'mightn', "mightn't", 'mine', 'more',
+             'moreover', 'most', 'mostly', 'must', 'mustn', "mustn't", 'my', 'myself', 'namely', 'needn', "needn't",
+             'neither', 'never', 'nevertheless', 'next', 'no', 'nobody', 'none', 'noone', 'nor', 'not', 'nothing',
+             'now', 'nowhere', 'o', 'of', 'off', 'on', 'once', 'one', 'only', 'onto', 'or', 'other', 'others',
+             'otherwise', 'our', 'ours', 'ourselves', 'out', 'over', 'per', 'please', 's', 'same', 'shan', "shan't",
+             'she', "she's", "should've", 'shouldn', "shouldn't", 'somehow', 'something', 'sometime', 'somewhere',
+             'such', 't', 'than', 'that', "that'll", 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'thence',
+             'there', 'thereafter', 'thereby', 'therefore', 'therein', 'thereupon', 'these', 'they', 'this', 'those',
+             'through', 'throughout', 'thru', 'thus', 'to', 'too', 'toward', 'towards', 'under', 'unless', 'until',
+             'up', 'upon', 'used', 've', 'was', 'wasn', "wasn't", 'we', 'were', 'weren', "weren't", 'what', 'whatever',
+             'when', 'whence', 'whenever', 'where', 'whereafter', 'whereas', 'whereby', 'wherein', 'whereupon',
+             'wherever', 'whether', 'which', 'while', 'whither', 'who', 'whoever', 'whole', 'whom', 'whose', 'why',
+             'with', 'within', 'without', 'won', "won't", 'would', 'wouldn', "wouldn't", 'y', 'yet', 'you', "you'd",
+             "you'll", "you're", "you've", 'your', 'yours', 'yourself', 'yourselves']
 
 # misspelling
 keyboard_model = nmc.Keyboard(special_char=False, numeric=False, upper_case=False, lang='en', model_path=None)
 misspell_words_model = nmwd.Spelling(LIB_DIR + '/resources/spelling/spelling_en.txt')
+
 
 # end region constants
 
@@ -204,13 +231,34 @@ def get_same_POS_replacements(text, word_index, replacement_options):
     # get all replacement options
     sents = [words[:word_index] + [rep_opt] + words[word_index + 1:] for rep_opt in replacement_options]
     # Identify the parts of speech
-    tagged = nltk.pos_tag(words)
+    tagged = nltk.pos_tag(words, tagset='universal')
     tag = tagged[word_index][1]
-    tags = nltk.pos_tag_sents(sents)
-    return [i for i, x in enumerate(tags) if x[word_index][1] == tag]
+    tags = nltk.pos_tag_sents(sents, tagset='universal')
+    return [i for i, x in enumerate(tags) if
+            (x[word_index][1] == tag or set([x[word_index][1], tag]) <= set(['NOUN', 'VERB']))]
 
 
-def get_sentence_of_word_index(text: str, word_index: int):
+def get_words_local_env(text: str, word_index: int, window_size=15):
+    """
+    this function gets a text and a word index, it returns only ta window_size of words around the word given (by
+    index), and updates the word  index accordingly
+    :param text:
+    :param word_index:
+    :return:new_text, new_word_index - after taking only the wanted words
+    """
+    words = text.split()
+    if len(words) < window_size:
+        return text, word_index
+    if word_index - 0.5 * window_size < 0:
+        return ' '.join(words[:window_size]), word_index
+    if word_index + 0.5 * window_size > len(words):
+        return ' '.join(words[-window_size:]), word_index - (len(words) - window_size)
+    return ' '.join(words[word_index - int(0.5 * window_size):word_index + int(0.5 * window_size) + 1]), int(
+        0.5 * window_size)
+
+
+'''
+def get_words_local_env(text: str, word_index: int):
     """
     this function gets a text and a word index, it returns only the sentence of the word given (by index), and updates
     the word  index accordingly
@@ -218,8 +266,6 @@ def get_sentence_of_word_index(text: str, word_index: int):
     :param word_index:
     :return:new_text, new_word_index - after taking only the wanted sentence
     """
-    # sent_list = text.split(' .')
-    # sent_list = [s + ' .' for s in sent_list if s != '']
     sent_list = nltk.sent_tokenize(text)
     sent_lens = [len(s.split()) - 0.001 for s in sent_list]  # the minus is used for index exactly at the end of a sentence
     cu = np.cumsum(sent_lens)
@@ -231,6 +277,7 @@ def get_sentence_of_word_index(text: str, word_index: int):
         new_word_index = word_index
 
     return new_text, new_word_index
+'''
 
 
 def replace_word(text: str, word_ind: int, word: str):
@@ -299,7 +346,7 @@ def get_perplexity(texts, lm, tokeniser, device):
 
 
 # region actions
-def replace_with_synonym(text, word_index, sess, topn=10, word_sim_thresh=0.6,
+def replace_with_synonym(text, word_index, sess, topn=30, word_sim_thresh=0.6,
                          sentence_sim_thresh=0.6, debug=False):
     """
     This function replaces the word at a given word_index (when splitting by spaces), of the given text with a synonym.
@@ -325,7 +372,7 @@ def replace_with_synonym(text, word_index, sess, topn=10, word_sim_thresh=0.6,
     :return: the new text after the replacement
     """
     # work with single sentence only (that of the given word)
-    new_text, new_word_index = get_sentence_of_word_index(text, word_index)
+    new_text, new_word_index = get_words_local_env(text, word_index)
     # look in cache of previously calculated actions
     if (new_text, int(new_word_index)) in synonym_act_dict:
         rep_word = synonym_act_dict[(new_text, int(new_word_index))]
@@ -410,7 +457,7 @@ def replace_with_synonym_perplexity(text, word_index, sess, topn=30, word_sim_th
     :return: the new text after the replacement
     """
     # work with single sentence only (that of the given word)
-    new_text, new_word_index = get_sentence_of_word_index(text, word_index)
+    new_text, new_word_index = get_words_local_env(text, word_index)
 
     # look in cache of previously calculated actions
     if (text, int(word_index)) in synonym_act_dict:
@@ -472,7 +519,7 @@ def replace_with_synonym_perplexity(text, word_index, sess, topn=30, word_sim_th
 
     ppl_diff = (text_perplexity[1:] - text_perplexity[0]).cpu().numpy()
     print('text perplexity difference', ppl_diff) if debug else ''
-    combined_score = (sentence_similarity**4) * 100 - ppl_diff*1
+    combined_score = (sentence_similarity ** 2) * 100 - ppl_diff * 1
     print('combined score', combined_score) if debug else ''
 
     best_option = np.argmax(combined_score)
@@ -513,11 +560,10 @@ def replace_with_synonym_all_text(text, word_index, sess, topn=10, word_sim_thre
     # work with single sentence only (that of the given word)
     print('----------------------------')
     print('before, ', text, word_index)
-    text, word_index, sents, sent_ind = get_sentence_of_word_index(text, word_index)
+    text, word_index, sents, sent_ind = get_words_local_env(text, word_index)
     print('after, ', text, word_index)
     # look in cache of previously calculated actions
     if (text, int(word_index)) in synonym_act_dict:
-        # print(f'len of syn dict {len(synonym_act_dict)}')
         return synonym_act_dict[(text, int(word_index))]
 
     # Get the list of words from the entire text
@@ -571,8 +617,8 @@ def replace_with_synonym_all_text(text, word_index, sess, topn=10, word_sim_thre
     return text
 
 
-def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=10, word_sim_thresh=0.6,
-                                sentence_sim_thresh=0.6, debug=False):
+def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=50, word_sim_thresh=0.5,
+                                sentence_sim_thresh=0.5, debug=False):
     """
     This function replaces the word at a given word_index (when splitting by spaces), of the given text with a synonym.
     The synonym is chosen by a series of steps as presented in the paper - " Is BERT Really Robust? A Strong Baseline
@@ -587,19 +633,19 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=10, wor
     :param debug: a flag for extra printed information
     :return: the new text after the replacement
     """
+    new_text, new_word_index = get_words_local_env(text, word_index)
     # look in cache of previously calculated actions
-    # if (text, int(word_index)) in synonym_act_dict:
-    #     # print(f'len of syn dict {len(synonym_act_dict)}')
-    #     return synonym_act_dict[(text, int(word_index))]
+    if (text, int(word_index)) in synonym_act_dict:
+        return synonym_act_dict[(text, int(word_index))]
 
     # Get the list of words from the entire text
-    words = text.split()
-    word = words[word_index]
+    words = new_text.split()
+    word = words[new_word_index]
     print('text', text) if debug else ''
     print('word', word) if debug else ''
 
     # if word not in vocabulary
-    if word not in word_vectors:
+    if word in STOPWORDS or word not in word_vectors:
         synonym_act_dict[(text, int(word_index))] = text
         return text
 
@@ -629,12 +675,20 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=10, wor
     # get sentence similarity to original
     sent_options = []
     for opt in rep_options:
-        words[word_index] = opt
+        words[new_word_index] = opt
         sent_options.append(' '.join(words))
-    sentence_similarity = get_similarity([text] + sent_options, sess)
+    sentence_similarity = get_similarity([new_text] + sent_options, sess)
     print('sentence similarity', sentence_similarity) if debug else ''
     cand_mask = (sentence_similarity >= sentence_sim_thresh)
     print('cand mask', cand_mask) if debug else ''
+
+    # regenerate the entire text options for classification and returning
+    sent_options = []
+    all_words = text.split()
+    for opt in rep_options:
+        all_words[word_index] = opt
+        sent_options.append(' '.join(all_words))
+
     if cand_mask.sum() == 1:
         synonym_act_dict[(text, int(word_index))] = [i for (i, v) in zip(sent_options, cand_mask) if v][0]
         return [i for (i, v) in zip(sent_options, cand_mask) if v][0]
@@ -654,6 +708,7 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=10, wor
             return cur_sent_options[np.argmax(sentence_similarity[changed_class])]
         synonym_act_dict[(text, int(word_index))] = sent_options[np.argmin(new_probs)]
         print('result2: ', sent_options[np.argmin(new_probs)]) if debug else ''
+
         return sent_options[np.argmin(new_probs)]
 
     synonym_act_dict[(text, int(word_index))] = text
@@ -662,7 +717,7 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=10, wor
 
 def remove_word(text, word_index):
     words = text.split()
-    return " ".join(words[:word_index] + words[word_index+1:])
+    return " ".join(words[:word_index] + words[word_index + 1:])
 
 
 def remove_contractions(text, sess):
@@ -721,7 +776,7 @@ def qwerty_misspell(word):
     if len(alpha_chars_ind) == 0:
         return word
 
-    char_ind = alpha_chars_ind[int(0.5*len(alpha_chars_ind))]  # change the middle charcter
+    char_ind = alpha_chars_ind[int(0.5 * len(alpha_chars_ind))]  # change the middle character
     chars[char_ind] = keyboard_model.predict(chars[char_ind])[0]  # select the first replacement
     return ''.join(chars)
 
@@ -744,26 +799,35 @@ def misspell(text, word_ind):
     new_word = qwerty_misspell(word)
     words[word_ind] = new_word
     return ' '.join(words)
+
+
 # endregion actions
 
+'''
+from transformers import GPT2LMHeadModel, GPT2TokenizerFast
+import sys
+sys.path.insert(1, LIB_DIR)
+import time
+from src.TextModels.E2EBert import E2EBertTextModel
 
-# from transformers import GPT2LMHeadModel, GPT2TokenizerFast
-# import time
-#
-# if __name__ == '__main__':
-#     device = 'cuda'
-#     model_id = 'gpt2'
-#     model = GPT2LMHeadModel.from_pretrained(model_id).to(device).half()
-#     model2 = GPT2LMHeadModel.from_pretrained(model_id).to(device)
-#     tokenizer = GPT2TokenizerFast.from_pretrained(model_id)
-#
-#     tokenizer.padding_side = "right"
-#     tokenizer.pad_token = tokenizer.eos_token  # to avoid an error
-#
-#     # some_text = 'this movie was awesome , if you want a movie with non - stop puns and laughter then this is right for you . this movie was great because it took the serious robin hood and made it something the whole family can enjoy and get a good laugh at . i first viewed this movie when i was around 10, and got most of it . this movie is also great because it makes fun of everything involved , " by order of the kings financial secretary h and r blockhead ?" everyone needs a little cary elwes ( robin hood ) in life , whether or not its liar liar with the " claw " or saw . this movie is worth watching'
-#     # some_text = "here is a movie of adventure , determination , heroism , & bravery . plus , it's set back in the late 1800s which makes it even more interesting . it's a wonderful , adventurous storyline , and alyssa milano is wonderful at playing the wholesome , confident , no - nonsense fizzy ... a great role - model . this is one of my favorite movies . it is a movie to be watched again and again and will inspire you and enrich your life without a doubt . not only is the storyline excellent , but the movie also has fabulous scenery and music and is wonderfully directed . this movie is as good as gold !"
-#     # some_text = "finally !!! a good movie made on the most demented serial killer in history . for those less familiar with ed gein , he was basically the madman who was known for grave robbing and skinning his victims ( which most horror fans ripped off ). shot in a period style that reflects the bleak plains of wisconsin perfectly , this is easily the most atmospheric horror film yet to depict gein and his gruesome killings . kane hodder ( jason from friday the 13th series ) and michael berryman ( hills have eyes i & ii ), deliver chilling performances in this serial killer opus that easily leaves behind the lackluster former gein attempts . so far i'd say this is one of the better horror films released this year ( turistas = 0)."
-#     # some_text = 'it doesn\'t matter whether drew or leelee are total babes , but there are a lot of girls who are so pretty and hot but they appear to be so nerdy . this movie is not oscar type of movie but it has at least a good point of view of what life is like for young people or for " real " people . it made us laugh and learn to accept others for who they really are . this movie represents the real world and that what really matters .'
+
+if __name__ == '__main__':
+    device = 'cuda'
+    model_id = 'gpt2'
+    model = GPT2LMHeadModel.from_pretrained(model_id).to(device).half()
+    model2 = GPT2LMHeadModel.from_pretrained('gpt2-xl').to(device)
+    tokenizer = GPT2TokenizerFast.from_pretrained(model_id)
+
+    tokenizer.padding_side = "right"
+    tokenizer.pad_token = tokenizer.eos_token  # to avoid an error
+    text_model = E2EBertTextModel(trained_model='LUNATC/data/aclImdb/imdb' + 'e2e_bert.pth')
+
+    # some_text = 'this movie was awesome , if you want a movie with non - stop puns and laughter then this is right for you . this movie was great because it took the serious robin hood and made it something the whole family can enjoy and get a good laugh at . i first viewed this movie when i was around 10, and got most of it . this movie is also great because it makes fun of everything involved , " by order of the kings financial secretary h and r blockhead ?" everyone needs a little cary elwes ( robin hood ) in life , whether or not its liar liar with the " claw " or saw . this movie is worth watching'
+    # some_text = "here is a movie of adventure , determination , heroism , & bravery . plus , it's set back in the late 1800s which makes it even more interesting . it's a wonderful , adventurous storyline , and alyssa milano is wonderful at playing the wholesome , confident , no - nonsense fizzy ... a great role - model . this is one of my favorite movies . it is a movie to be watched again and again and will inspire you and enrich your life without a doubt . not only is the storyline excellent , but the movie also has fabulous scenery and music and is wonderfully directed . this movie is as good as gold !"
+    # some_text = "claudine is a movie that is representation of the american system at it's worst . the welfare system was initially set up as a stepping stone for those families who needed that extra hand to get back on their feet.the movie showed an accurate portrayal of how the welfare system breaks down the family unit . in other words if the father or any male figure is in the lives of the women and children their financial support from the system would be jeopardized if not terminated . the struggles of the poor can be seen throughout the world . i would like to see a reproduction of this movie back in the stores for all to rent or buy for their library collection ."
+    # some_text = "finally !!! a good movie made on the most demented serial killer in history . for those less familiar with ed gein , he was basically the madman who was known for grave robbing and skinning his victims ( which most horror fans ripped off ). shot in a period style that reflects the bleak plains of wisconsin perfectly , this is easily the most atmospheric horror film yet to depict gein and his gruesome killings . kane hodder ( jason from friday the 13th series ) and michael berryman ( hills have eyes i & ii ), deliver chilling performances in this serial killer opus that easily leaves behind the lackluster former gein attempts . so far i'd say this is one of the better horror films released this year ( turistas = 0)."
+    # some_text = "may i never have to go to this hospital [ or hospice , if i want to be politically correct ] [ which ass coined this asinine phrase , anyway ?], for anything other than directions on how to get out of town . george c . did a masterful job playing the burned out , over worked cynic who has come to the conclusion that his life has been a waste , but is helpless to change his environment or conditions even when given a golden opportunity [ which probably wasn't so golden anyway ]. i got several laughs out of this brutally black comedy , however at the same time was sobered and often chilled to the marrow because i fear this very atmosphere pervades most houses of healing even as i write ."
+    some_text = 'it doesn\'t matter whether drew or leelee are total babes , but there are a lot of girls who are so pretty and hot but they appear to be so nerdy . this movie is not oscar type of movie but it has at least a good point of view of what life is like for young people or for " real " people . it made us laugh and learn to accept others for who they really are . this movie represents the real world and that what really matters .'
 #     some_text = "i loved this thing . the most wonderful thing about pink flamingos is that it strives desperately to be in horrible taste , but has really gained a cult following world wide . says a lot about us ( us being people ) doesn't it . pink flamingos succeeds because waters made the film he wanted to make . a film need not be disgusting to succeed , but it may be . when you watch this film , you see things that are disgusting , but are ultimately brilliant because they are freely displayed . what we have here is an honest piece of personal creative expression . everyone who ever cares to succeed as an artist , be it in film or any other media , should watch this film ."
 #     # some_text = "this is the first pepe le pew cartoon and in some ways it's very similar to the later ones but in a few other odd ways it is not . while the object of pepe's affections is a cat , oddly it appears to be a boy cat ! this whole predicament occurs because a cat is tired of being abused by others and dresses up like a skunk and tries to smell like a skunk so it can be left alone . unfortunately , this attracts our hero , pepe . most of the action is pretty typical until the very funny and unexpected ending -- and this actually makes this one of the best of all cartoons in the series . excellent animation ( though the style is different than later examples ), excellent writing and a good sense of humor make this one a keeper ."
 #     # some_text = "drive was an enjoyable episode with a dark ending . basically a man and his wife are infected in their inner ear by a high pitched sound wave being emitted by some military equipment . some favorite parts of mine from this episode are mulder's dialogue in the car , and the scene where scully goes in with the hazmat team and find the little old deaf lady completely unaffected by what they thought was a virus . the ending of course is tragic in its realism because it leads the viewer to believe that they are going to actually be able to pull off this elaborate plan to save the victim but when mulder arrives the man is already dead . 8/10"
@@ -774,19 +838,24 @@ def misspell(text, word_ind):
 #     # some_text = 'a brutally straightforward tale of murder and capital punishment by the state . so painfully slow and accurate in the description of capital punishment ( from the preparation of the gallow to the victim p *** ing in his own pants before dying ) it has the power to change your mind about death penalty . the whole dekalog originated from this story : the dekalog screenwriter was the powerless lawyer unsuccessfully trying to defend and then console the accused .'
 #     # some_text = "ok , so maybe it's because i'm from the north east of scotland and i talk just like the guys in this film , but i found this great fun . cheap fun to be sure , but plenty of effort has gone into making the film look great and the actors certainly give it all . i was actually quite effected when they died . in particulare when the captain finally fell . the script ? well it ; s a game of 2 halfs . the opening half of the film is well written and sharp . the last half hour is not so great , with many questions left unanswered . this will doubtless annoy others as it annoyed me . but nevertheless , good fun and a very smart first feature from sturton ."
 #
-#     sess = tf.Session()
-#     sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
-#
-#     # for i in range(len(some_text.split())):
-#     #     print(f"--------{i}--------------")
-#     #     ppl_text = replace_with_synonym_perplexity(some_text, i, sess, debug=False, lm=model, tokeniser=tokenizer)[0]
-#     #     syn_text = replace_with_synonym_perplexity(some_text, i, sess, debug=False, lm=model2, tokeniser=tokenizer)[0]
-#     #     # syn_text = replace_with_synonym(some_text, some_i, sess, debug=False)
-#     #     if ppl_text != syn_text:
-#     #         print(ppl_text)
-#     #         print(syn_text)
-#     #     elif ppl_text != some_text:
-#     #         print(ppl_text)
+    sess = tf.Session()
+    sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
+
+    for i in range(len(some_text.split())):
+        print(f"--------{i}--------------")
+        ppl_text = replace_with_synonym_perplexity(some_text, i, sess, debug=True, lm=model, tokeniser=tokenizer)[0]
+        # ppl_text = replace_with_synonym(some_text, i, sess, debug=True, topn=30)
+        syn_text = replace_with_synonym(some_text, i, sess, debug=False, topn=30)
+        # greed_text = replace_with_synonym_greedy(some_text, i, text_model, sess, debug=False)
+        # print(get_perplexity([some_text, syn_text, greed_text, ppl_text], model, tokenizer, "cuda"))
+        # print(ppl_text)
+        # print(syn_text)
+        # print(greed_text)
+        if ppl_text != syn_text:
+            print(ppl_text)
+            print(syn_text)
+        elif ppl_text != some_text:
+            print(ppl_text)
 #
 #     # t0 = time.time()
 #     # for j in range(10):
@@ -802,3 +871,4 @@ def misspell(text, word_ind):
 #                                                        tokeniser=tokenizer, topn=30)
 #             # syn_text = replace_with_synonym(some_text, i, sess, debug=False)
 #     print(time.time() - t0)
+'''
