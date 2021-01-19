@@ -76,7 +76,7 @@ class Environment(ABC):
         # the change in difference between class model outputs - the smaller the difference the closer the model to
         # changing predictions
         logit_diff = (old_proba[self.original_class] - old_proba[1 - self.original_class]) - \
-                     (new_proba[self.original_class] - new_proba[1 - self.original_class])
+                     max((new_proba[self.original_class] - new_proba[1 - self.original_class]), 0)
 
         self.cur_prob = new_proba
         if np.argmax(new_proba) == self.original_class:
