@@ -32,8 +32,8 @@ NE_type_dict = {
 }
 
 
-def softmax(x, axis=0):
-    exp_x = np.exp(x)
+def softmax(x, axis=0, temp=1):
+    exp_x = np.exp(x/temp)
     return exp_x / np.sum(exp_x, axis=axis)
 
 

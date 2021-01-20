@@ -210,6 +210,15 @@ def possible_actions(text):
     return content_words
 
 
+def possible_synonyms(word: str, topn: int = 50, word_sim_thresh: float = 0.9, debug: bool = False):
+    # find synonym options
+    rep_options = word_vectors.most_similar(positive=[word], topn=topn)
+    print('all', rep_options) if debug else ''
+    rep_options = [word for word, sim_score in rep_options if sim_score > word_sim_thresh]
+    print('thresh', rep_options) if debug else ''
+    return rep_options
+
+
 def get_similarity(messages, sess):
     """ calculates the similarity between the first message and the others using Universal Sentence encoder"""
     message_embeddings = sess.run(similarity_message_encodings, feed_dict={similarity_input_placeholder: messages})
@@ -390,10 +399,7 @@ def replace_with_synonym(text, word_index, sess, topn=50, word_sim_thresh=0.9,
         return text
 
     # find synonym options
-    rep_options = word_vectors.most_similar(positive=[word], topn=topn)
-    print('all', rep_options) if debug else ''
-    rep_options = [word for word, sim_score in rep_options if sim_score > word_sim_thresh]
-    print('thresh', rep_options) if debug else ''
+    rep_options = possible_synonyms(word, topn, word_sim_thresh, debug)
 
     # no good enough synonyms
     if len(rep_options) == 0:
@@ -477,10 +483,7 @@ def replace_with_synonym_perplexity(text, word_index, sess, topn=50, word_sim_th
         return text, 0
 
     # find synonym options
-    rep_options = word_vectors.most_similar(positive=[word], topn=topn)
-    print('all', rep_options) if debug else ''
-    rep_options = [word for word, sim_score in rep_options if sim_score > word_sim_thresh]
-    print('thresh', rep_options) if debug else ''
+    rep_options = possible_synonyms(word, topn, word_sim_thresh, debug)
 
     # no good enough synonyms
     if len(rep_options) == 0:
@@ -578,10 +581,7 @@ def replace_with_synonym_all_text(text, word_index, sess, topn=50, word_sim_thre
         return text
 
     # find synonym options
-    rep_options = word_vectors.most_similar(positive=[word], topn=topn)
-    print('all', rep_options) if debug else ''
-    rep_options = [word for word, sim_score in rep_options if sim_score > word_sim_thresh]
-    print('thresh', rep_options) if debug else ''
+    rep_options = possible_synonyms(word, topn, word_sim_thresh, debug)
 
     # no good enough synonyms
     if len(rep_options) == 0:
@@ -650,10 +650,7 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=50, wor
         return text
 
     # find synonym options
-    rep_options = word_vectors.most_similar(positive=[word], topn=topn)
-    print('all', rep_options) if debug else ''
-    rep_options = [word for word, sim_score in rep_options if sim_score > word_sim_thresh]
-    print('thresh', rep_options) if debug else ''
+    rep_options = possible_synonyms(word, topn, word_sim_thresh, debug)
 
     # no good enough synonyms
     if len(rep_options) == 0:

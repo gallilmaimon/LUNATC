@@ -48,7 +48,7 @@ class E2EBertTextModel(TextModel):
         return embed
 
     def predict_proba(self, X):
-        if X in self.proba_cache:
+        if type(X) != list and X in self.proba_cache:
             return self.proba_cache[X]
 
         self.model.eval()
@@ -59,7 +59,8 @@ class E2EBertTextModel(TextModel):
             # res = F.softmax(self.model(sent_token, attention_mask=sent_att)[0])
             res = self.model(sent_token, attention_mask=sent_att)[0]
             probs = res.detach().cpu().numpy()
-        self.proba_cache[X] = probs
+        if type(X) != list:
+            self.proba_cache[X] = probs
         return probs
 
     def predict(self, X):
