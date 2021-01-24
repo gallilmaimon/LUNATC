@@ -97,7 +97,6 @@ if __name__ == '__main__':
         sent_list = list(cur_df.content.values)
         se = sent_list[0]
         best_sent, sim_score = attack_sent(se, text_model, tf_sess)
-        print((np.array(best_sent.split()) != np.array(se.split())).sum())
         print(n, se, best_sent, sim_score)
         df.at[n, 'best_sent'] = best_sent
         df.at[n, 'max_score'] = sim_score

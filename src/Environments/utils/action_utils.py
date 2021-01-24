@@ -6,6 +6,8 @@ import os
 import pickle
 import re
 
+from src.Agents.utils.pwws_utils import softmax
+
 # Universal Sentence Encoder
 import tensorflow as tf
 import tensorflow_hub as hub
@@ -695,7 +697,7 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=50, wor
         sentence_similarity = sentence_similarity[cand_mask]
         orig_probs = text_model.predict_proba(text)[0]
         orig_pred = np.argmax(orig_probs)
-        new_probs = [text_model.predict_proba(new_sent)[0][orig_pred] for new_sent in sent_options]
+        new_probs = [softmax(text_model.predict_proba(new_sent)[0], axis=0)[orig_pred] for new_sent in sent_options]
         print('new probs: ', new_probs) if debug else ''
         changed_class = list(map(lambda x: x < 0.5, new_probs))
         if sum(changed_class) >= 1:
@@ -810,21 +812,22 @@ from src.TextModels.E2EBert import E2EBertTextModel
 
 if __name__ == '__main__':
     device = 'cuda'
-    model_id = 'gpt2'
-    model = GPT2LMHeadModel.from_pretrained(model_id).to(device).half()
-    model2 = GPT2LMHeadModel.from_pretrained('gpt2-xl').to(device)
-    tokenizer = GPT2TokenizerFast.from_pretrained(model_id)
+    # model_id = 'gpt2'
+    # model = GPT2LMHeadModel.from_pretrained(model_id).to(device).half()
+    # model2 = GPT2LMHeadModel.from_pretrained('gpt2-xl').to(device)
+    # tokenizer = GPT2TokenizerFast.from_pretrained(model_id)
 
-    tokenizer.padding_side = "right"
-    tokenizer.pad_token = tokenizer.eos_token  # to avoid an error
-    text_model = E2EBertTextModel(trained_model='LUNATC/data/aclImdb/imdb' + 'e2e_bert.pth')
+    # tokenizer.padding_side = "right"
+    # tokenizer.pad_token = tokenizer.eos_token  # to avoid an error
+    text_model = E2EBertTextModel(trained_model='../../../data/aclImdb/imdb' + 'e2e_bert.pth')
 
+    some_text = "ever since 1981, nintendo has been making great video games such as super mario and zelda . most ideas would get a bit boring after 20 years . games made by nintendo never seem to get boring because they're always adding something new . it went from arcade games to the wii and i hear that there's a new version of the wii scheduled for release in 2011. the thing that makes wii games so different is the fact that your actually doing something instead of just sitting on the couch pushing buttons . and i have more good news . super mario galaxy 2 is to be released in 2010."
     # some_text = 'this movie was awesome , if you want a movie with non - stop puns and laughter then this is right for you . this movie was great because it took the serious robin hood and made it something the whole family can enjoy and get a good laugh at . i first viewed this movie when i was around 10, and got most of it . this movie is also great because it makes fun of everything involved , " by order of the kings financial secretary h and r blockhead ?" everyone needs a little cary elwes ( robin hood ) in life , whether or not its liar liar with the " claw " or saw . this movie is worth watching'
     # some_text = "here is a movie of adventure , determination , heroism , & bravery . plus , it's set back in the late 1800s which makes it even more interesting . it's a wonderful , adventurous storyline , and alyssa milano is wonderful at playing the wholesome , confident , no - nonsense fizzy ... a great role - model . this is one of my favorite movies . it is a movie to be watched again and again and will inspire you and enrich your life without a doubt . not only is the storyline excellent , but the movie also has fabulous scenery and music and is wonderfully directed . this movie is as good as gold !"
     # some_text = "claudine is a movie that is representation of the american system at it's worst . the welfare system was initially set up as a stepping stone for those families who needed that extra hand to get back on their feet.the movie showed an accurate portrayal of how the welfare system breaks down the family unit . in other words if the father or any male figure is in the lives of the women and children their financial support from the system would be jeopardized if not terminated . the struggles of the poor can be seen throughout the world . i would like to see a reproduction of this movie back in the stores for all to rent or buy for their library collection ."
     # some_text = "finally !!! a good movie made on the most demented serial killer in history . for those less familiar with ed gein , he was basically the madman who was known for grave robbing and skinning his victims ( which most horror fans ripped off ). shot in a period style that reflects the bleak plains of wisconsin perfectly , this is easily the most atmospheric horror film yet to depict gein and his gruesome killings . kane hodder ( jason from friday the 13th series ) and michael berryman ( hills have eyes i & ii ), deliver chilling performances in this serial killer opus that easily leaves behind the lackluster former gein attempts . so far i'd say this is one of the better horror films released this year ( turistas = 0)."
     # some_text = "may i never have to go to this hospital [ or hospice , if i want to be politically correct ] [ which ass coined this asinine phrase , anyway ?], for anything other than directions on how to get out of town . george c . did a masterful job playing the burned out , over worked cynic who has come to the conclusion that his life has been a waste , but is helpless to change his environment or conditions even when given a golden opportunity [ which probably wasn't so golden anyway ]. i got several laughs out of this brutally black comedy , however at the same time was sobered and often chilled to the marrow because i fear this very atmosphere pervades most houses of healing even as i write ."
-    some_text = 'it doesn\'t matter whether drew or leelee are total babes , but there are a lot of girls who are so pretty and hot but they appear to be so nerdy . this movie is not oscar type of movie but it has at least a good point of view of what life is like for young people or for " real " people . it made us laugh and learn to accept others for who they really are . this movie represents the real world and that what really matters .'
+    # some_text = 'it doesn\'t matter whether drew or leelee are total babes , but there are a lot of girls who are so pretty and hot but they appear to be so nerdy . this movie is not oscar type of movie but it has at least a good point of view of what life is like for young people or for " real " people . it made us laugh and learn to accept others for who they really are . this movie represents the real world and that what really matters .'
 #     some_text = "i loved this thing . the most wonderful thing about pink flamingos is that it strives desperately to be in horrible taste , but has really gained a cult following world wide . says a lot about us ( us being people ) doesn't it . pink flamingos succeeds because waters made the film he wanted to make . a film need not be disgusting to succeed , but it may be . when you watch this film , you see things that are disgusting , but are ultimately brilliant because they are freely displayed . what we have here is an honest piece of personal creative expression . everyone who ever cares to succeed as an artist , be it in film or any other media , should watch this film ."
 #     # some_text = "this is the first pepe le pew cartoon and in some ways it's very similar to the later ones but in a few other odd ways it is not . while the object of pepe's affections is a cat , oddly it appears to be a boy cat ! this whole predicament occurs because a cat is tired of being abused by others and dresses up like a skunk and tries to smell like a skunk so it can be left alone . unfortunately , this attracts our hero , pepe . most of the action is pretty typical until the very funny and unexpected ending -- and this actually makes this one of the best of all cartoons in the series . excellent animation ( though the style is different than later examples ), excellent writing and a good sense of humor make this one a keeper ."
 #     # some_text = "drive was an enjoyable episode with a dark ending . basically a man and his wife are infected in their inner ear by a high pitched sound wave being emitted by some military equipment . some favorite parts of mine from this episode are mulder's dialogue in the car , and the scene where scully goes in with the hazmat team and find the little old deaf lady completely unaffected by what they thought was a virus . the ending of course is tragic in its realism because it leads the viewer to believe that they are going to actually be able to pull off this elaborate plan to save the victim but when mulder arrives the man is already dead . 8/10"
@@ -840,10 +843,10 @@ if __name__ == '__main__':
 
     for i in range(len(some_text.split())):
         print(f"--------{i}--------------")
-        ppl_text = replace_with_synonym_perplexity(some_text, i, sess, debug=True, lm=model, tokeniser=tokenizer)[0]
+        # ppl_text = replace_with_synonym_perplexity(some_text, i, sess, debug=True, lm=model, tokeniser=tokenizer)[0]
         # ppl_text = replace_with_synonym(some_text, i, sess, debug=True, topn=30)
-        syn_text = replace_with_synonym(some_text, i, sess, debug=False, topn=30)
-        # greed_text = replace_with_synonym_greedy(some_text, i, text_model, sess, debug=False)
+        syn_text = replace_with_synonym(some_text, i, sess, debug=True)
+        ppl_text = replace_with_synonym_greedy(some_text, i, text_model, sess, debug=True)
         # print(get_perplexity([some_text, syn_text, greed_text, ppl_text], model, tokenizer, "cuda"))
         # print(ppl_text)
         # print(syn_text)

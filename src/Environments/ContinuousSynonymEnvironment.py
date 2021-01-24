@@ -1,7 +1,7 @@
 # imports
 import numpy as np
 from copy import deepcopy as copy
-from src.Environments.utils.action_utils import replace_with_synonym_perplexity, replace_with_synonym, possible_actions
+from src.Environments.utils.action_utils import replace_with_synonym_perplexity, replace_with_synonym, replace_with_synonym_greedy, possible_actions
 
 from src.Environments.Environment import Environment
 
@@ -48,7 +48,8 @@ class ContinuousSynonymEnvironment(Environment):
         # replace with synonym
         if self.ppl_diff:
             return replace_with_synonym_perplexity(s, a, self.sess, lm=self.lm, tokeniser=self.tokenizer)
-        return replace_with_synonym(s, a, self.sess)
+        # return replace_with_synonym(s, a, self.sess)
+        return replace_with_synonym_greedy(s, a, self.text_model, self.sess)
 
     def step(self, a):
         # if agent chooses illegal move - negative reward , no change in state
