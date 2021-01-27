@@ -7,7 +7,7 @@ from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 class Environment(ABC):
     @abstractmethod
     def __init__(self, max_sent_len, sent_list, sess, init_sentence=None, text_model=None, max_turns=30,
-                 ppl_diff=False, device='cuda'):
+                 ppl_diff=False, device='cuda', embed_states=True):
         self.text_model = text_model
         self.ppl_diff = ppl_diff
         self.lm = GPT2LMHeadModel.from_pretrained('gpt2').to(device).half() if ppl_diff else None
@@ -28,6 +28,7 @@ class Environment(ABC):
         self.max_turns = max_turns
         self.turn = 0
         self.cur_prob = None
+        self.embed_states = embed_states
         self.reset(init_sentence)
 
     @abstractmethod
@@ -49,7 +50,9 @@ class Environment(ABC):
         self.cur_prob = self.text_model.predict_proba(self.init_sentence)[0]
         self.original_class = np.argmax(self.cur_prob)
         self.turn = 0
-        return self.get_embedded_state(self.state)
+        if self.embed_states:
+            return self.get_embedded_state(self.state)
+        return self.state
 
     @abstractmethod
     def render(self):
@@ -98,5 +101,7 @@ class Environment(ABC):
         return None
 
     @abstractmethod
-    def get_embedded_state(self, state):
+    def get_embedded_state(self, state, ret_type='numpy'):
+        if ret_type == 'pt':
+            return self.text_model.embed(state)
         return self.text_model.embed(state).cpu().numpy()[0]

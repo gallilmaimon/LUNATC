@@ -17,7 +17,7 @@ import sys
 LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
-from src.Environments.ContinuousSynonymEnvironment import ContinuousSynonymEnvironment
+from src.Environments.SynonymEnvironment import SynonymEnvironment
 from src.Agents.Memory.ReplayMemory import ReplayMemory, Transition
 from src.Agents.Memory.PrioritisedMemory import PrioritisedMemory
 from src.TextModels.text_model_utils import load_embedding_dict
@@ -96,9 +96,9 @@ class ContinuousDQNAgent:
         sess = tf.Session()
         sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
-        self.env = ContinuousSynonymEnvironment(n_actions, sent_list, sess, init_sentence=None, text_model=text_model,
-                                                max_turns=cfg.params["MAX_TURNS"], ppl_diff=cfg.params['USE_PPL'],
-                                                device=device)
+        self.env = SynonymEnvironment(n_actions, sent_list, sess, init_sentence=None, text_model=text_model,
+                                      max_turns=cfg.params["MAX_TURNS"], ppl_diff=cfg.params['USE_PPL'], device=device,
+                                      embed_states=False)
 
         net_type = ContinuousDQNNetLarge if cfg.params['ATTACK_TYPE'] == 'universal' or cfg.params['USE_PPL'] else ContinuousDQNNetSmall
         self.policy_net = net_type(self.state_shape, self.action_shape).to(device)
@@ -307,7 +307,7 @@ class ContinuousDQNAgent:
 
             # get embedded action representation and embed state
             embedded_a = self._get_embedded_actions(s, self.env.legal_moves)
-            s = self.env.get_embedded_state(s).to(self.device).view(1, -1)
+            s = self.env.get_embedded_state(s, ret_type='pt').to(self.device).view(1, -1)
             s = self.norm.normalize(s) if self.norm is not None else s
 
             while not done:
@@ -322,9 +322,9 @@ class ContinuousDQNAgent:
                                                                   device=self.device)]) if not done else None
                 reward = torch.tensor([reward], device=self.device, dtype=torch.float32)
                 if self.norm is not None:
-                    s_new = self.norm.normalize(self.env.get_embedded_state(s_new).to(self.device).view(1, -1)) if not done else None
+                    s_new = self.norm.normalize(self.env.get_embedded_state(s_new, ret_type='pt').to(self.device).view(1, -1)) if not done else None
                 else:
-                    s_new = self.env.get_embedded_state(s_new).view(1, -1) if not done else None
+                    s_new = self.env.get_embedded_state(s_new, ret_type='pt').view(1, -1) if not done else None
                 tot_reward += reward
 
                 legal_moves = torch.zeros([1, self.n_actions], dtype=bool)
