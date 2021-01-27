@@ -40,12 +40,11 @@ def attack_sent(sent: str, text_model: TextModel, sess: tf.Session, pop_size: in
     pop = [replace_with_synonym_greedy(cur_text, selected_i[i], text_model, sess) for i in range(pop_size)]
 
     for i in range(max_generation):
-        pop_preds = np.concatenate([softmax(text_model.predict_proba(t), axis=1) for t in pop], axis=0)  # TODO: support batch proccessing
+        pop_preds = softmax(text_model.predict_proba(pop), axis=1)
         pop_scores = pop_preds[:, target]
         best_ind = np.argmax(pop_scores)
         best_adv = pop[best_ind]
         if pop_scores[best_ind] > 0.5:
-            print(i)
             return best_adv, 1
 
         select_prob = softmax(pop_scores, temp=0.3)

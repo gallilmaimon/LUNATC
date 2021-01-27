@@ -697,7 +697,8 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=50, wor
         sentence_similarity = sentence_similarity[cand_mask]
         orig_probs = text_model.predict_proba(text)[0]
         orig_pred = np.argmax(orig_probs)
-        new_probs = [softmax(text_model.predict_proba(new_sent)[0], axis=0)[orig_pred] for new_sent in sent_options]
+        new_probs = softmax(text_model.predict_proba(sent_options), axis=1)[:, orig_pred]
+        # new_probs = [softmax(text_model.predict_proba(new_sent)[0], axis=0)[orig_pred] for new_sent in sent_options]
         print('new probs: ', new_probs) if debug else ''
         changed_class = list(map(lambda x: x < 0.5, new_probs))
         if sum(changed_class) >= 1:

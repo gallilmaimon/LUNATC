@@ -1,5 +1,5 @@
 base_path: '../../data/aclImdb/imdb'   # the base path for the data, model, results, etc.
-ATTACKED_INDICES: '[16, 20, 21, 22, 23, 25]'  # 'range(166, 250)'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
+ATTACKED_INDICES: 'range(5)'  # 'range(166, 250)'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
 ENV_TYPE: 'Synonym'  # Environment type - from ['Synonym', 'SynonymDelete', 'SynonymMisspell']
 USE_PPL: False  # boolean of whether to use perplexity (using GPT-2) to select more natural synonyms and integrate this for the reward
 ATTACK_TYPE: 'individual'  # attack each text individually or by learning all text together - from ['universal', 'individual']

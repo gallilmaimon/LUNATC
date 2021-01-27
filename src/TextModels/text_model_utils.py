@@ -57,16 +57,6 @@ def embed_sentence_mean_layer11(sent, model, tokenizer, device):
     return torch.mean(encoded_layers[11], 1)
 
 
-def pad_sequences(input_ids, maxlen):
-    padded = []
-    for inp in input_ids:
-        if len(inp) >= maxlen:
-            padded.append(inp[:maxlen-1] + [inp[-1]])
-        else:
-            padded.append(inp + [0]*(maxlen - len(inp)))
-    return padded
-
-
 def pad_sequence(inp, maxlen, token=0):
     if len(inp) >= maxlen:
         return inp[:maxlen-1] + [inp[-1]]

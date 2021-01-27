@@ -34,7 +34,7 @@ NE_type_dict = {
 
 def softmax(x, axis=0, temp=1):
     exp_x = np.exp(x/temp)
-    return exp_x / np.sum(exp_x, axis=axis)
+    return exp_x / np.sum(exp_x, axis=axis, keepdims=True)
 
 
 def get_wordnet_pos(token):

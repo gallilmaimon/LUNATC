@@ -5,7 +5,7 @@ from src.TextModels.TextModel import TextModel
 # bert
 import torch
 from transformers import BertForSequenceClassification, BertTokenizer, BertModel, BertConfig
-from src.TextModels.text_model_utils import pad_sequences, embed_texts
+from src.TextModels.text_model_utils import embed_texts
 
 
 class E2EBertTextModel(TextModel):
@@ -53,9 +53,11 @@ class E2EBertTextModel(TextModel):
 
         self.model.eval()
         with torch.no_grad():
-            sent_token = torch.Tensor(pad_sequences([self.bert_tokeniser.encode(X, add_special_tokens=True)],
-                                                    256)).long().to(self.device)
-            sent_att = (sent_token > 0).int().to(self.device)
+            inputs = self.bert_tokeniser(X, padding=True, truncation=True, max_length=256, pad_to_multiple_of=256,
+                                         return_tensors='pt')
+
+            sent_token = inputs['input_ids'].to(self.device)
+            sent_att = inputs['attention_mask'].to(self.device)
             # res = F.softmax(self.model(sent_token, attention_mask=sent_att)[0])
             res = self.model(sent_token, attention_mask=sent_att)[0]
             probs = res.detach().cpu().numpy()
