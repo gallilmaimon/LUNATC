@@ -191,7 +191,7 @@ class ContinuousDQNAgent:
         stacked_next_state = non_final_next_states.repeat((1, self.n_actions)).view(-1, self.state_shape)
 
         stacked_input = torch.cat([stacked_next_state, next_state_actions], dim=1)
-        net_out = self.policy_net(stacked_input).view(-1, self.n_actions)
+        net_out = self.target_net(stacked_input).view(-1, self.n_actions)
 
         mask = torch.zeros(net_out.shape[0], net_out.shape[1] + 1, dtype=net_out.dtype, device=net_out.device)
         mask[(torch.arange(net_out.shape[0]), legal_count)] = 1
@@ -204,7 +204,7 @@ class ContinuousDQNAgent:
                                                           step=self.n_actions, device=self.device)
         # input selected actions to target net
         target_net_input = torch.cat([non_final_next_states, next_state_actions.index_select(0, chosen_actions)], dim=1)
-        next_state_values[non_final_mask] = self.target_net(target_net_input).view(-1)
+        next_state_values[non_final_mask] = self.policy_net(target_net_input).view(-1)
 
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
