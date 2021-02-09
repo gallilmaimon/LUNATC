@@ -1,5 +1,6 @@
 import math
 import random
+import pickle
 import numpy as np
 import tensorflow as tf
 
@@ -149,6 +150,50 @@ class DQNAgent:
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
+
+    def save_agent(self, path):
+        os.makedirs(path, exist_ok=True)
+        # save models and optimiser
+        torch.save(self.policy_net.state_dict(), path + '/policy.pth')
+        torch.save(self.target_net.state_dict(), path + '/target.pth')
+        torch.save(self.optimizer.state_dict(), path + '/optim.pth')
+
+        # save parameters
+        param_dict = {'gamma': self.gamma, 'eps_start': self.eps_start, 'eps_end': self.eps_end,
+                      'eps_decay': self.eps_decay, 'batch_size': self.batch_size, 'target_update': self.target_update,
+                      'steps_done': self.steps_done, 'n_actions': self.n_actions, 'device': self.device}
+        with open(path + '/parameters.pkl', 'wb') as f:
+            pickle.dump(param_dict, f)
+
+        # save normaliser
+        with open(path + '/norm.pkl', 'wb') as f:
+            pickle.dump(self.norm, f)
+
+        # save memory
+        with open(path + '/memory.pkl', 'wb') as f:
+            pickle.dump(self.memory, f)
+
+    def load_agent(self, path):
+        # load models and optimiser
+        self.policy_net.load_state_dict(torch.load(path + '/policy.pth'))
+        self.target_net.load_state_dict(torch.load(path + '/target.pth'))
+        self.optimizer.load_state_dict(torch.load(path + '/optim.pth'))
+
+        # load parameters
+        with open(path + '/parameters.pkl', 'rb') as f:
+            params = pickle.load(f)
+        self.gamma, self.eps_start, self.eps_end = params['gamma'], params['eps_start'], params['eps_end']
+        self.eps_decay, self.batch_size, self.target_update = params['eps_decay'], params['batch_size'], params['target_update']
+        self.steps_done, self.n_actions = params['steps_done'], params['n_actions']
+        self.device = params['device']
+
+        # load normaliser
+        with open(path + '/norm.pkl', 'rb') as f:
+            self.norm = pickle.load(f)
+
+        # load memory
+        with open(path + '/memory.pkl', 'rb') as f:
+            self.memory = pickle.load(f)
 
     def train_model(self, num_episodes):
         for i_episode in range(num_episodes):

@@ -2,13 +2,13 @@ base_path: '../../data/aclImdb/imdb'   # the base path for the data, model, resu
 ATTACKED_INDICES: 'range(5)'  # 'range(166, 250)'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
 ENV_TYPE: 'Synonym'  # Environment type - from ['Synonym', 'SynonymDelete', 'SynonymMisspell']
 USE_PPL: False  # boolean of whether to use perplexity (using GPT-2) to select more natural synonyms and integrate this for the reward
-ATTACK_TYPE: 'individual'  # attack each text individually or by learning all text together - from ['universal', 'individual']
+ATTACK_TYPE: 'universal'  # attack each text individually or by learning all text together - from ['universal', 'individual']
 SEED: 42  # the random seed
 DEVICE: 'cuda'  # which device to use
-AGENT_TYPE: 'dqn_contin'  # agent used to attack ['dqn', 'dqn_contin']
+AGENT_TYPE: 'dqn'  # agent used to attack ['dqn', 'dqn_contin']
 MODEL_TYPE: 'e2e'  # attacked model type: end-to-end transfer learning of BERT or text embedding transfer learning of BERT, or Word-LSTM ['e2e', 'transfer', 'lstm']
 BATCH_SIZE: 128   # number of transitions to sample for training the agent at each step
-NUM_EPISODES: 1000  # number of episodes to "play" for each text if attacking individually, or altogether else
+NUM_EPISODES: 100  # number of episodes to "play" for each text if attacking individually, or altogether else
 EARLY_STOPPING:   # the reward above which the attack stops, leave empty for no early_Stopping. when aiming for any attack, and not the best this speeds things up dramatically
 MAX_SENT_LEN: 150  # the maximum sentence length, which influences the number of actions. ignored if attacking individually
 POLICY_UPDATE: 1  # every how many agent steps to update the policy network
