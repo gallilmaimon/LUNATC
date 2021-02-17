@@ -14,10 +14,12 @@ class E2EBertTextModel(TextModel):
 
         # end2end bert for sequence classification (the model being "attacked")
         self.bert_tokeniser = BertTokenizer.from_pretrained(bert_type, do_lower_case=True)
-        self.model = BertForSequenceClassification.from_pretrained(bert_type,
-                                                                   num_labels=num_classes)
         if trained_model is not None:
-            self.model.load_state_dict(torch.load(trained_model, map_location=lambda storage, loc: storage))
+            bert_config = BertConfig.from_pretrained(bert_type)
+            self.model = BertForSequenceClassification.from_pretrained(None, config=bert_config,
+                                                                       state_dict=torch.load(trained_model))
+        else:
+            self.model = BertForSequenceClassification.from_pretrained(bert_type, num_labels=num_classes)
 
         # set to eval mode
         self.model.eval()
