@@ -56,9 +56,9 @@ class Environment(ABC):
 
     @abstractmethod
     def render(self):
-        print('initial sentence', self.init_sentence)
-        print('state', self.state)
-        print('moves made: ', self.turn)
+        print('initial sentence', self.init_sentence, flush=True)
+        print('state', self.state, flush=True)
+        print('moves made: ', self.turn, flush=True)
 
     @abstractmethod
     def r(self, a):

@@ -119,9 +119,9 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     df = pd.read_csv(data_path)
     # take smaller subset
     df = df.iloc[eval(cfg.params['ATTACKED_INDICES'])]
-    print(len(df))
+    print(len(df), flush=True)
     sent_list = list(df.content.values)
-    print(sent_list)
+    print(sent_list, flush=True)
 
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment

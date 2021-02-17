@@ -25,7 +25,7 @@ class SynonymEnvironment(Environment):
 
     def render(self):
         super().render()
-        print('words changed: ', (np.array(self.init_sentence.split()) != np.array(self.state.split())).sum())
+        print('words changed: ', (np.array(self.init_sentence.split()) != np.array(self.state.split())).sum(), flush=True)
 
     def r(self, a):
         return super().r(a)
