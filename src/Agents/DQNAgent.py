@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from torch.nn.utils.clip_grad import clip_grad_value_
 
 # add base path so that can import other files from project
 import os
@@ -16,9 +17,9 @@ LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
 from src.Environments.SynonymEnvironment import SynonymEnvironment
-from src.Environments.SynonymMisspellEnvironement import SynonymMisspellEnvironment
 from src.Environments.utils.action_utils import possible_actions
 from src.Agents.Memory.ReplayMemory import ReplayMemory, Transition
+from src.Agents.Memory.PrioritisedMemory import PrioritisedMemory
 
 # configuration
 from src.Config.Config import Config
@@ -56,17 +57,6 @@ class DQNAgent:
         sess = tf.Session()
         sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
-        # # initialise selected environment type
-        # if cfg.params["ENV_TYPE"] == 'Synonym':
-        #     self.env = SynonymEnvironment(n_actions, sent_list, sess, init_sentence=None,
-        #                                   text_model=text_model, max_turns=cfg.params["MAX_TURNS"])
-        # elif cfg.params["ENV_TYPE"] == 'SynonymMisspell':
-        #     self.env = SynonymMisspellEnvironment(n_actions, sent_list, sess, init_sentence=None,
-        #                                           text_model=text_model, max_turns=cfg.params["MAX_TURNS"])
-        # else:
-        #     print("Unsupported ENV_TYPE !")
-        #     exit(1)
-
         self.env = SynonymEnvironment(n_actions, sent_list, sess, init_sentence=None, text_model=text_model,
                                       max_turns=cfg.params["MAX_TURNS"])
 
@@ -77,7 +67,7 @@ class DQNAgent:
         self.target_net.eval()
 
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=cfg.params["LEARNING_RATE"])
-        self.memory = ReplayMemory(mem_size)
+        self.memory = self.memory = PrioritisedMemory(mem_size) if cfg.params["MEM_TYPE"] == 'priority' else ReplayMemory(mem_size)
 
         # DQN parameters
         self.gamma = cfg.params['GAMMA']
@@ -101,15 +91,19 @@ class DQNAgent:
                 # return the action with the largest expected reward from within the legal actions
                 return torch.tensor(legal_actions[self.policy_net(s)[:, legal_actions].max(1)[1]], device=self.device,
                                     dtype=torch.long).view(1, 1)
-                # return self.policy_net(s).max(1)[1].view(1, 1)
         else:
-            # return torch.tensor([[random.randrange(cfg.params["MAX_SENT_LEN"])]], device=device, dtype=torch.long)
             return torch.tensor([random.sample(legal_actions, 1)], device=self.device, dtype=torch.long)
 
     def _optimize_model(self):
         if len(self.memory) < self.batch_size:
             return
-        transitions = self.memory.sample(self.batch_size)
+
+        transitions = None
+        if type(self.memory) == ReplayMemory:
+            transitions = self.memory.sample(self.batch_size)
+        elif type(self.memory) == PrioritisedMemory:
+            transitions, idx, is_weight = self.memory.sample(self.batch_size)
+
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for detailed explanation). This converts
         # batch-array of Transitions to Transition of batch-arrays.
         batch = Transition(*zip(*transitions))
@@ -135,7 +129,7 @@ class DQNAgent:
         # next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
 
         # For double DQNNet - variant
-        chosen_actions = (self.target_net(non_final_next_states)+(-1*np.inf*(legal_batch[non_final_mask]))).argmax(1).detach().view(-1, 1)
+        chosen_actions = (self.target_net(non_final_next_states) - (1e5 * (~legal_batch[non_final_mask]))).argmax(1).detach().view(-1, 1)  # this chooses only legal actions
         next_state_values[non_final_mask] = self.policy_net(non_final_next_states).gather(1, chosen_actions).view(-1)
 
         # Compute the expected Q values
@@ -144,11 +138,21 @@ class DQNAgent:
         # Compute Huber loss
         loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
 
+        if type(self.memory) == ReplayMemory:
+            weighted_loss = loss.mean()
+        elif type(self.memory) == PrioritisedMemory:
+            weighted_loss = (torch.FloatTensor(is_weight).to(self.device) * loss.view(-1)).mean()
+
+            # update priorities
+            loss2 = torch.clone(loss).view(-1).detach().cpu().numpy()
+            for j in range(len(loss2)):
+                self.memory.update(idx[j], loss2[j])
+
         # Optimize the model
         self.optimizer.zero_grad()
-        loss.backward()
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        weighted_loss.backward()
+        clip_grad_value_(self.policy_net.parameters(), 1)
+
         self.optimizer.step()
 
     def save_agent(self, path):
@@ -195,6 +199,18 @@ class DQNAgent:
         with open(path + '/memory.pkl', 'rb') as f:
             self.memory = pickle.load(f)
 
+    def _get_td_error(self, s, a, s_new, r, legal_moves):
+        with torch.no_grad():
+            pred_q = self.policy_net(s).gather(1, a)
+
+            if s_new is None:
+                next_q = 0
+            else:
+                chosen_a = (self.target_net(s_new) - 1e5 * (~legal_moves)).argmax().detach().view(-1, 1)  # this chooses from legal actions only
+                next_q = self.policy_net(s_new).gather(1, chosen_a)
+            calc_q = r + self.gamma * next_q
+            return F.smooth_l1_loss(calc_q.view(-1), pred_q.view(-1)).cpu().numpy()
+
     def train_model(self, num_episodes):
         for i_episode in range(num_episodes):
             # Initialize the environment and state
@@ -219,7 +235,11 @@ class DQNAgent:
                 legal_moves[:, possible_actions(self.env.state)] = True
 
                 # Store the transition in memory
-                self.memory.push(s, action, s_new, reward, legal_moves.to(self.device), None)
+                if type(self.memory) == ReplayMemory:
+                    self.memory.push(s, action, s_new, reward, legal_moves.to(self.device), None)
+                elif type(self.memory) == PrioritisedMemory:
+                    td_err = self._get_td_error(s, action, s_new, reward, legal_moves.to(self.device))
+                    self.memory.add(td_err, (s, action, s_new, reward, legal_moves.to(self.device), None))
 
                 # Move to the next state
                 s = s_new
