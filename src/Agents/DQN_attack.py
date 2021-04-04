@@ -37,6 +37,7 @@ def attack_individually(model_type: str = "e2e"):
     state_shape = cfg.params["STATE_SHAPE"]
     norm_rounds = cfg.params["NORMALISE_ROUNDS"]
     handle_out = cfg.params["HANDLE_OUT"]
+    mem_size = cfg.params["MEMORY_SIZE"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
     assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
@@ -79,9 +80,9 @@ def attack_individually(model_type: str = "e2e"):
         n_actions = len(sent_list[0].split())
         dqn = None
         if cfg.params['AGENT_TYPE'] == 'dqn':
-            dqn = DQNAgent(sent_list, text_model, n_actions, norm, device)
+            dqn = DQNAgent(sent_list, text_model, n_actions, norm, device, mem_size)
         elif cfg.params['AGENT_TYPE'] == 'dqn_contin':
-            dqn = ContinuousDQNAgent(sent_list, text_model, n_actions, norm, device)
+            dqn = ContinuousDQNAgent(sent_list, text_model, n_actions, norm, device, mem_size)
         else:
             print("illegal AGENT_TYPE selected! choose one of ['dqn', 'dqn_contin']")
             exit(0)
@@ -109,6 +110,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     n_actions = cfg.params["MAX_SENT_LEN"]
     norm_rounds = cfg.params["NORMALISE_ROUNDS"]
     handle_out = cfg.params["HANDLE_OUT"]
+    mem_size = cfg.params["MEMORY_SIZE"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
     assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
@@ -148,9 +150,9 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     # define agent
     dqn = None
     if cfg.params['AGENT_TYPE'] == 'dqn':
-        dqn = DQNAgent(sent_list, text_model, n_actions, norm, device)
+        dqn = DQNAgent(sent_list, text_model, n_actions, norm, device, mem_size)
     elif cfg.params['AGENT_TYPE'] == 'dqn_contin':
-        dqn = ContinuousDQNAgent(sent_list, text_model, n_actions, norm, device)
+        dqn = ContinuousDQNAgent(sent_list, text_model, n_actions, norm, device, mem_size)
     else:
         print("illegal AGENT_TYPE selected! choose one of ['dqn', 'dqn_contin']")
         exit(0)
