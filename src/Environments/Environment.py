@@ -23,6 +23,7 @@ class Environment(ABC):
         self.original_class = None
         self.init_sentence = None
         self.sent_list = sent_list
+        self.sent_ind = 0
         self.legal_moves = None
         self.sess = sess
         self.max_turns = max_turns
@@ -40,9 +41,13 @@ class Environment(ABC):
         # reset score
         self.score = 0
 
+        if self.sent_ind % len(self.sent_list) == 0:
+            np.random.shuffle(self.sent_list)
+            self.sent_ind = 0
+
         if init_sentence is None:
-            # np.random.seed()
-            self.init_sentence = np.random.choice(self.sent_list)
+            # self.init_sentence = np.random.choice(self.sent_list)
+            self.init_sentence = self.sent_list[self.sent_ind]
         else:
             self.init_sentence = init_sentence
 
@@ -50,6 +55,9 @@ class Environment(ABC):
         self.cur_prob = self.text_model.predict_proba(self.init_sentence)[0]
         self.original_class = np.argmax(self.cur_prob)
         self.turn = 0
+
+        self.sent_ind += 1
+
         if self.embed_states:
             return self.get_embedded_state(self.state)
         return self.state
