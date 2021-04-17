@@ -48,11 +48,12 @@ class DQNNet(nn.Module):
 
 
 class DQNAgent:
-    def __init__(self, sent_list, text_model, n_actions, norm=None, device='cuda', mem_size=10000):
+    def __init__(self, sent_list, text_model, n_actions, norm=None, device='cuda', mem_size=10000, test_mode=False):
         state_shape = cfg.params["STATE_SHAPE"]
         self.n_actions = n_actions
         self.norm = norm
         self.device = device
+        self.test_mode = test_mode
 
         sess = tf.Session()
         sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
@@ -86,7 +87,7 @@ class DQNAgent:
         eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
                         math.exp(-1. * self.steps_done / self.eps_decay)
         self.steps_done += 1
-        if random.random() > eps_threshold:
+        if random.random() > eps_threshold or self.test_mode:
             with torch.no_grad():
                 # return the action with the largest expected reward from within the legal actions
                 return torch.tensor(legal_actions[self.policy_net(s)[:, legal_actions].max(1)[1]], device=self.device,
@@ -211,7 +212,7 @@ class DQNAgent:
             calc_q = r + self.gamma * next_q
             return F.smooth_l1_loss(calc_q.view(-1), pred_q.view(-1)).cpu().numpy()
 
-    def train_model(self, num_episodes):
+    def train_model(self, num_episodes, optimise=True):
         for i_episode in range(num_episodes):
             # Initialize the environment and state
             s = self.env.reset()
@@ -245,7 +246,7 @@ class DQNAgent:
                 s = s_new
 
                 # Perform one step of the optimization (on the target network)
-                self._optimize_model()
+                self._optimize_model() if optimise else ''
                 if done:
                     self.rewards.append(tot_reward.item())
                     self.final_states.append(self.env.state)

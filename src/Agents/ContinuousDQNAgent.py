@@ -86,12 +86,13 @@ class ContinuousDQNNetSmall(nn.Module):
 
 
 class ContinuousDQNAgent:
-    def __init__(self, sent_list, text_model, n_actions, norm=None, device='cuda', mem_size=10000):
+    def __init__(self, sent_list, text_model, n_actions, norm=None, device='cuda', mem_size=10000, test_mode=False):
         self.state_shape = cfg.params["STATE_SHAPE"]
         self.n_actions = n_actions
         self.action_shape = 200  # TODO: make not constant
         self.norm = norm
         self.device = device
+        self.test_mode = test_mode
 
         sess = tf.Session()
         sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
@@ -100,7 +101,8 @@ class ContinuousDQNAgent:
                                       max_turns=cfg.params["MAX_TURNS"], ppl_diff=cfg.params['USE_PPL'], device=device,
                                       embed_states=False)
 
-        net_type = ContinuousDQNNetLarge if cfg.params['ATTACK_TYPE'] == 'universal' or cfg.params['USE_PPL'] else ContinuousDQNNetSmall
+        net_type = ContinuousDQNNetLarge if cfg.params['ATTACK_TYPE'] == 'universal' or \
+                                            cfg.params['USE_PPL'] or self.test_mode else ContinuousDQNNetSmall
         self.policy_net = net_type(self.state_shape, self.action_shape).to(device)
         self.target_net = net_type(self.state_shape, self.action_shape).to(device)
 
@@ -142,7 +144,7 @@ class ContinuousDQNAgent:
         eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
                         math.exp(-1. * self.steps_done / self.eps_decay)
         self.steps_done += 1
-        if random.random() > eps_threshold:
+        if random.random() > eps_threshold or self.test_mode:
             with torch.no_grad():
                 s = s.repeat(len(legal_actions), 1)
                 s_a = torch.cat([s, action_embeddings], axis=1)
