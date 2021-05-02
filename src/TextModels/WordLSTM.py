@@ -81,7 +81,11 @@ class WordLSTM(TextModel):
         return embed_texts(X, self.bert_model, self.bert_tokeniser, device=self.device)
 
     def predict_proba(self, X):
-        embedded_sent = glove_tokenify(X, self.word2ind, self.pad_ind, self.maxlen).to(self.device)
+        if type(X) == list:
+            embedded_sent = torch.cat([glove_tokenify(text, self.word2ind, self.pad_ind, self.maxlen).to(self.device)
+                                      .view(1, -1) for text in X])
+        else:
+            embedded_sent = glove_tokenify(X, self.word2ind, self.pad_ind, self.maxlen).to(self.device)
         self.model.eval()
         with torch.no_grad():
             probs = self.model(embedded_sent).detach().cpu().numpy()

@@ -57,7 +57,7 @@ if __name__ == '__main__':
     base_path = cfg.params["base_path"]
     MAX_TURNS = cfg.params["MAX_TURNS"]
     model_type = cfg.params["MODEL_TYPE"]
-    attack_type = 'pwws'  
+    attack_type = 'tf'
 
     tf_sess = tf.Session()
     tf_sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
@@ -95,5 +95,5 @@ if __name__ == '__main__':
 
     print(df.head())
     # save results
-    df.to_csv(base_path + f'_mit_{model_type}.csv', index=False)
+    df.to_csv(base_path + f'_{attack_type}_{model_type}.csv', index=False)
 
