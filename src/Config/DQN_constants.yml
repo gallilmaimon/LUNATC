@@ -1,4 +1,4 @@
-base_path: '../../data/aclImdb/imdb'   # the base path for the data, model, results, etc.
+base_path: '../../data/toxic/toxic'   # the base path for the data, model, results, etc.
 ATTACKED_INDICES: 'range(250)'  # 'range(166, 250)'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
 ENV_TYPE: 'Synonym'  # Environment type - from ['Synonym', 'SynonymDelete', 'SynonymMisspell']
 USE_PPL: False  # boolean of whether to use perplexity (using GPT-2) to select more natural synonyms and integrate this for the reward

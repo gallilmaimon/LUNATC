@@ -32,6 +32,7 @@ def calc_word_importance(sent: str, text_model: TextModel, imp_type: str = 'tf',
         word_imp = [orig_prob - softmax(text_model.predict_proba(new_sent)[0])[orig_pred] for new_sent in new_sents]
         return (softmax(np.array(tf_imp)) * np.array(word_imp)).tolist()
 
+
 def rank_word_importance(sent: str, text_model: TextModel, imp_type: str = 'tf', sess: tf.Session = None) -> list:
     new_probs = calc_word_importance(sent, text_model, imp_type, sess)
     return list(reversed(np.argsort(new_probs)))
