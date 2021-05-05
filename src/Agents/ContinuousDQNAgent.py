@@ -134,6 +134,7 @@ class ContinuousDQNAgent:
         self.batch_size = cfg.params['BATCH_SIZE']
         self.target_update = cfg.params['TARGET_UPDATE']
         self.policy_update = cfg.params['POLICY_UPDATE']
+        self.early_stopping = cfg.params["EARLY_STOPPING"]
 
         self.steps_done = 0
         self.rewards = []
@@ -351,6 +352,9 @@ class ContinuousDQNAgent:
                     self.rewards.append(tot_reward.item())
                     self.env.render()
                     print("Ep:", i_episode, "| Ep_r: %.5f" % tot_reward)
+                    # early stopping if the wanted reward was achieved
+                    if tot_reward.item() > self.early_stopping:
+                        return
                     break
 
             # Update the target network, copying all weights and biases in DQNNet
