@@ -83,6 +83,7 @@ if __name__ == '__main__':
     # attack
     df = pd.read_csv(data_path)
     df.drop_duplicates('content', inplace=True)
+    df.reset_index(drop=True, inplace=True)
     df['best_sent'] = ''
     df['max_score'] = 0.
     for n in range(len(df)):
