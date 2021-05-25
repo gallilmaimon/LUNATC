@@ -216,11 +216,19 @@ class DQNAgent:
         for i_episode in range(num_episodes):
             # Initialize the environment and state
             s = self.env.reset()
+
             self.init_states.append(self.env.state)
-            done = False
-            s = torch.Tensor(s).to(self.device).view(1, -1)
-            s = self.norm.normalize(s) if self.norm is not None else s
-            tot_reward = 0
+            tot_reward = torch.tensor([.0]).to(self.device)
+
+            if len(self.env.legal_moves) == 0:  # if there are no legal actions the round is done
+                done = True
+            else:
+                done = False
+
+                # get embedded action representation and embed state
+                s = torch.Tensor(s).to(self.device).view(1, -1)
+                s = self.norm.normalize(s) if self.norm is not None else s
+
             while not done:
                 # Select and perform an action
                 action = self.select_action(s, self.env.legal_moves)
@@ -247,12 +255,11 @@ class DQNAgent:
 
                 # Perform one step of the optimization (on the target network)
                 self._optimize_model() if optimise else ''
-                if done:
-                    self.rewards.append(tot_reward.item())
-                    self.final_states.append(self.env.state)
-                    self.env.render()
-                    print("Ep:", i_episode, "| Ep_r: %.5f" % tot_reward)
-                    break
+
+            self.rewards.append(tot_reward.item())
+            self.final_states.append(self.env.state)
+            self.env.render()
+            print("Ep:", i_episode, "| Ep_r: %.5f" % tot_reward)
 
             # Update the target network, copying all weights and biases in DQNNet
             if i_episode % self.target_update == 0:

@@ -304,14 +304,19 @@ class ContinuousDQNAgent:
         for i_episode in range(num_episodes):
             # Initialize the environment and state
             s = self.env.reset()
-            self.init_states.append(self.env.state)
-            done = False
-            tot_reward = 0
 
-            # get embedded action representation and embed state
-            embedded_a = self._get_embedded_actions(s, self.env.legal_moves)
-            s = self.env.get_embedded_state(s, ret_type='pt').to(self.device).view(1, -1)
-            s = self.norm.normalize(s) if self.norm is not None else s
+            self.init_states.append(self.env.state)
+            tot_reward = torch.tensor([.0]).to(self.device)
+
+            if len(self.env.legal_moves) == 0:  # if there are no legal actions the round is done
+                done = True
+            else:
+                done = False
+
+                # get embedded action representation and embed state
+                embedded_a = self._get_embedded_actions(s, self.env.legal_moves)
+                s = self.env.get_embedded_state(s, ret_type='pt').to(self.device).view(1, -1)
+                s = self.norm.normalize(s) if self.norm is not None else s
 
             while not done:
                 update_count += 1
@@ -347,15 +352,14 @@ class ContinuousDQNAgent:
 
                 # Perform one step of the optimization
                 self._optimize_model() if optimise and update_count % self.policy_update == 0 else ''
-                if done:
-                    self.final_states.append(self.env.state)
-                    self.rewards.append(tot_reward.item())
-                    self.env.render()
-                    print("Ep:", i_episode, "| Ep_r: %.5f" % tot_reward)
-                    # early stopping if the wanted reward was achieved
-                    if tot_reward.item() > self.early_stopping:
-                        return
-                    break
+
+            self.final_states.append(self.env.state)
+            self.rewards.append(tot_reward.item())
+            self.env.render()
+            print("Ep:", i_episode, "| Ep_r: %.5f" % tot_reward)
+            # early stopping if the wanted reward was achieved
+            if tot_reward.item() > self.early_stopping:
+                return
 
             # Update the target network, copying all weights and biases in DQNNet
             if i_episode % self.target_update == 0:
