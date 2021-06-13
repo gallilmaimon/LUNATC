@@ -52,7 +52,7 @@ def attack_individually(model_type: str = "e2e"):
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
 
     # generate data
-    data_path = base_path + '_sample.csv'
+    data_path = base_path + f'_sample_{model_type}.csv'
     df = pd.read_csv(data_path)
 
     cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
