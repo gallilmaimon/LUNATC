@@ -10,7 +10,7 @@ MEMORY_SIZE: 10000  # the number of transition tuples to store in the DQN agent'
 MODEL_TYPE: 'e2e'  # attacked model type: end-to-end transfer learning of BERT or text embedding transfer learning of BERT, or Word-LSTM ['e2e', 'transfer', 'lstm']
 BATCH_SIZE: 128   # number of transitions to sample for training the agent at each step
 NUM_EPISODES: 1000  # number of episodes to "play" for each text if attacking individually, or in test mode, or total number of rounds for universal attacks
-EARLY_STOPPING: 10  # the reward above which the attack stops, set to above 200 for no early stopping. when aiming for any attack, and not the best this speeds things up
+EARLY_STOPPING: 10  # the reward above which the attack stops, set to above 200 for no early stopping. when aiming for any attack, and not necessarily the best this speeds things up
 MAX_SENT_LEN: 150  # the maximum text length, which influences the number of actions. ignored if attacking individually
 POLICY_UPDATE: 1  # every how many agent steps to update the policy network
 TARGET_UPDATE: 5  # every how many agent episodes to update the target network
