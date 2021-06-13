@@ -1,7 +1,6 @@
 import math
 import random
 import pickle
-import numpy as np
 import tensorflow as tf
 
 import torch
@@ -18,8 +17,8 @@ sys.path.insert(1, LIB_DIR)
 
 from src.Environments.SynonymEnvironment import SynonymEnvironment
 from src.Environments.utils.action_utils import possible_actions
-from src.Agents.Memory.ReplayMemory import ReplayMemory, Transition
-from src.Agents.Memory.PrioritisedMemory import PrioritisedMemory
+from src.Attacks.Agents.Memory.ReplayMemory import ReplayMemory, Transition
+from src.Attacks.Agents.Memory.PrioritisedMemory import PrioritisedMemory
 
 # configuration
 from src.Config.Config import Config

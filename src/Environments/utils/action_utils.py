@@ -6,7 +6,7 @@ import os
 import pickle
 import re
 
-from src.Agents.utils.pwws_utils import softmax
+from src.Attacks.utils.pwws_utils import softmax
 
 # Universal Sentence Encoder
 import tensorflow as tf

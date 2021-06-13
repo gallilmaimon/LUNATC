@@ -12,11 +12,11 @@ sys.path.insert(1, LIB_DIR)
 from src.TextModels.E2EBert import E2EBertTextModel
 from src.TextModels.TransferBert import TransferBertTextModel
 from src.TextModels.WordLSTM import WordLSTM
-from src.Agents.Normalizers.norm_utils import get_normaliser
-from src.Agents.DQNAgent import DQNAgent
-from src.Agents.ContinuousDQNAgent import ContinuousDQNAgent
-from src.Agents.utils.vis_utils import log_results
-from src.Agents.utils.optim_utils import seed_everything
+from src.Attacks.Agents.Normalizers.norm_utils import get_normaliser
+from src.Attacks.Agents.DQNAgent import DQNAgent
+from src.Attacks.Agents.ContinuousDQNAgent import ContinuousDQNAgent
+from src.Attacks.utils.vis_utils import log_results
+from src.Attacks.utils.optim_utils import seed_everything
 
 # configuration
 from src.Config.Config import Config

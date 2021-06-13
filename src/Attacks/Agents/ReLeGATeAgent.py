@@ -5,7 +5,7 @@ import torch
 from torch import nn as nn, multiprocessing as mp
 from torch.nn import functional as F
 
-from src.Agents.utils.optim_utils import set_init, v_wrap, push_and_pull, synced_update, record
+from src.Attacks.utils.optim_utils import set_init, v_wrap, push_and_pull, synced_update, record
 from src.Environments.SynonymEnvironment import SynonymEnvironment
 from src.Environments.SynonymDeleteEnvironment import SynonymDeleteEnvironment
 from src.Environments.SynonymMisspellEnvironement import SynonymMisspellEnvironment

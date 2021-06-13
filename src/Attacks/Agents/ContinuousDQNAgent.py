@@ -18,8 +18,8 @@ LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
 from src.Environments.SynonymEnvironment import SynonymEnvironment
-from src.Agents.Memory.ReplayMemory import ReplayMemory, Transition
-from src.Agents.Memory.PrioritisedMemory import PrioritisedMemory
+from src.Attacks.Agents.Memory.ReplayMemory import ReplayMemory, Transition
+from src.Attacks.Agents.Memory.PrioritisedMemory import PrioritisedMemory
 from src.TextModels.text_model_utils import load_embedding_dict
 
 # configuration

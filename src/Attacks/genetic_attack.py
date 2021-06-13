@@ -14,9 +14,9 @@ from src.TextModels.TransferBert import TransferBertTextModel
 from src.TextModels.WordLSTM import WordLSTM
 from src.TextModels.E2EBert import E2EBertTextModel
 from src.Environments.utils.action_utils import replace_with_synonym, replace_with_synonym_greedy, possible_actions, possible_synonyms
-from src.Agents.utils.pwws_utils import softmax
+from src.Attacks.utils.pwws_utils import softmax
 from src.Config.Config import Config
-from src.Agents.utils.optim_utils import seed_everything
+from src.Attacks.utils.optim_utils import seed_everything
 
 
 def crossover(text1, text2):

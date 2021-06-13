@@ -8,7 +8,7 @@ import sys
 LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
-from src.Agents.utils.pwws_utils import nlp, get_synonym_options, get_named_entity_replacements, \
+from src.Attacks.utils.pwws_utils import nlp, get_synonym_options, get_named_entity_replacements, \
     calculate_word_saliency, delta_p_star
 
 import tensorflow as tf

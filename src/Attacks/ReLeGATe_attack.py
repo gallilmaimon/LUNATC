@@ -17,12 +17,12 @@ import shutil
 
 # agent
 import torch.multiprocessing as mp
-from src.Agents.utils.shared_adam import SharedAdam
-from src.Agents.ReLeGATeAgent import ReLeGATeAgentNet, ReLeGATeAgentWorker
-from src.Agents.SearchAgent import SearchAgentWorker
+from src.Attacks.utils.shared_adam import SharedAdam
+from src.Attacks.Agents.ReLeGATeAgent import ReLeGATeAgentNet, ReLeGATeAgentWorker
+from src.Attacks.Agents.SearchAgent import SearchAgentWorker
 
 # normalizer
-from src.Agents.Normalizers.norm_utils import get_normaliser
+from src.Attacks.Agents.Normalizers.norm_utils import get_normaliser
 
 # environment & language model
 from src.TextModels.E2EBert import E2EBertTextModel

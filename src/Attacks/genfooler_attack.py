@@ -21,10 +21,10 @@ from src.TextModels.E2EBert import E2EBertTextModel
 from src.TextModels.WordLSTM import WordLSTM
 
 # importing the textfooler word_importance
-from src.Agents.textfooler_attack import calc_word_importance
+from src.Attacks.textfooler_attack import calc_word_importance
 
 # fix randomness
-from src.Agents.utils.optim_utils import seed_everything
+from src.Attacks.utils.optim_utils import seed_everything
 
 
 class GenFooler(nn.Module):

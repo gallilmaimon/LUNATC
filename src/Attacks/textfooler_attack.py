@@ -15,7 +15,7 @@ from src.TextModels.WordLSTM import WordLSTM
 from src.TextModels.E2EBert import E2EBertTextModel
 from src.Environments.utils.action_utils import replace_with_synonym, get_similarity, replace_with_synonym_greedy, possible_actions
 from src.Config.Config import Config
-from src.Agents.utils.pwws_utils import softmax
+from src.Attacks.utils.pwws_utils import softmax
 
 
 def calc_word_importance(sent: str, text_model: TextModel, imp_type: str = 'tf', sess: tf.Session = None) -> list:

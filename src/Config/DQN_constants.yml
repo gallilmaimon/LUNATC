@@ -5,7 +5,7 @@ USE_PPL: False  # boolean of whether to use perplexity (using GPT-2) to select m
 ATTACK_TYPE: 'individual'  # attack each text individually or by learning all text together or by testing a pre-trained agent - from ['individual', 'universal', 'test']
 SEED: 42  # the random seed
 DEVICE: 'cuda'  # which device to use
-AGENT_TYPE: 'dqn_contin'  # agent used to attack ['dqn', 'dqn_contin']
+AGENT_TYPE: 'dqn'  # agent used to attack ['dqn', 'dqn_contin']
 MEMORY_SIZE: 10000  # the number of transition tuples to store in the DQN agent's memory
 MODEL_TYPE: 'e2e'  # attacked model type: end-to-end transfer learning of BERT or text embedding transfer learning of BERT, or Word-LSTM ['e2e', 'transfer', 'lstm']
 BATCH_SIZE: 128   # number of transitions to sample for training the agent at each step

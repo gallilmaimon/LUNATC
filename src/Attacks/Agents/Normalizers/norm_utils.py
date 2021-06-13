@@ -1,7 +1,7 @@
 import numpy as np
-from src.Agents.Normalizers.Normalizer import Normalizer
-from src.Agents.Normalizers.OfflineNormalizer import OfflineNormalizer
-from src.Agents.Normalizers.OnlineNormalizer import OnlineNormalizer
+from src.Attacks.Agents.Normalizers.Normalizer import Normalizer
+from src.Attacks.Agents.Normalizers.OfflineNormalizer import OfflineNormalizer
+from src.Attacks.Agents.Normalizers.OnlineNormalizer import OnlineNormalizer
 
 
 def get_normaliser(num_inputs: int, norm_rounds, states: np.array = None, norm_lock=None, device='numpy') -> Normalizer:

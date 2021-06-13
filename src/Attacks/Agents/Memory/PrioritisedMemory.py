@@ -1,8 +1,8 @@
 import random
 import numpy as np
 
-from src.Agents.Memory.SumTree import SumTree
-from src.Agents.Memory.ReplayMemory import Transition
+from src.Attacks.Agents.Memory.SumTree import SumTree
+from src.Attacks.Agents.Memory.ReplayMemory import Transition
 
 
 class PrioritisedMemory:

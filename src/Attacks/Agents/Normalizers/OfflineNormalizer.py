@@ -1,5 +1,5 @@
 import torch
-from src.Agents.Normalizers.Normalizer import Normalizer
+from src.Attacks.Agents.Normalizers.Normalizer import Normalizer
 
 
 class OfflineNormalizer(Normalizer):
