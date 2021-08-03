@@ -8,7 +8,7 @@ from transformers import BertForSequenceClassification, BertTokenizer, BertModel
 from src.TextModels.text_model_utils import embed_texts
 
 
-class E2EBertTextModel(TextModel):
+class BertTextModel(TextModel):
     def __init__(self, num_classes=2, trained_model=None, bert_type='bert-base-uncased', device="cuda"):
         self.num_classes = num_classes
 

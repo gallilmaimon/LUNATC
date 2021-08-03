@@ -11,7 +11,7 @@ sys.path.insert(1, LIB_DIR)
 
 from src.TextModels.TextModel import TextModel
 from src.TextModels.WordLSTM import WordLSTM
-from src.TextModels.E2EBert import E2EBertTextModel
+from src.TextModels.Bert import BertTextModel
 from src.Environments.utils.action_utils import replace_with_synonym, get_similarity, replace_with_synonym_greedy, possible_actions
 from src.Config.Config import Config
 from src.Attacks.utils.pwws_utils import softmax
@@ -65,8 +65,8 @@ if __name__ == '__main__':
     # load data and model
     data_path = base_path + f'_sample_{model_type}.csv'
     text_model = None
-    if model_type == "e2e":
-        text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth')
+    if model_type == "bert":
+        text_model = BertTextModel(trained_model=base_path + '_bert.pth')
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth')
     else:

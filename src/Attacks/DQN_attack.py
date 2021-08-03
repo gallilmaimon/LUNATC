@@ -9,7 +9,7 @@ import sys
 LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
-from src.TextModels.E2EBert import E2EBertTextModel
+from src.TextModels.Bert import BertTextModel
 from src.TextModels.WordLSTM import WordLSTM
 from src.Attacks.Agents.Normalizers.norm_utils import get_normaliser
 from src.Attacks.Agents.DQNAgent import DQNAgent
@@ -26,7 +26,7 @@ base_path = cfg.params["base_path"]
 # endregion constants
 
 
-def attack_individually(model_type: str = "e2e"):
+def attack_individually(model_type: str = "bert"):
     """
     this function performs the attack on each sentence individually - by retraining the model from scratch each time.
     the different parameters are read from the constants at the top of the file
@@ -39,12 +39,12 @@ def attack_individually(model_type: str = "e2e"):
     mem_size = cfg.params["MEMORY_SIZE"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
-    assert model_type in ["e2e", 'lstm'], "model type unrecognised or unsupported!"
+    assert model_type in ["bert", 'lstm'], "model type unrecognised or unsupported!"
 
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
-    if model_type == "e2e":
-        text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
+    if model_type == "bert":
+        text_model = BertTextModel(trained_model=base_path + '_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
 
@@ -98,7 +98,7 @@ def attack_individually(model_type: str = "e2e"):
             exit(0)
 
 
-def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
+def pretrain_attack_model(epoch=0, model_type: str = "bert"):
     """this model pretrains a single network on the data given"""
     seed_everything(cfg.params['SEED'])
     # initialise parameters
@@ -110,7 +110,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     mem_size = cfg.params["MEMORY_SIZE"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
-    assert model_type in ["e2e", 'lstm'], "model type unrecognised or unsupported!"
+    assert model_type in ["bert", 'lstm'], "model type unrecognised or unsupported!"
 
     print(f"Starting epoch number: {epoch}")
     # generate data
@@ -124,8 +124,8 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
 
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
-    if model_type == "e2e":
-        text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
+    if model_type == "bert":
+        text_model = BertTextModel(trained_model=base_path + '_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
 
@@ -165,7 +165,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
         exit(0)
 
 
-def test_trained_model(model_type: str = "e2e", epoch: int = 0):
+def test_trained_model(model_type: str = "bert", epoch: int = 0):
     """
     this function performs the attack on each text individually - by using a pre-trained model.
     the different parameters are read from the constants at the top of the file
@@ -179,12 +179,12 @@ def test_trained_model(model_type: str = "e2e", epoch: int = 0):
     n_actions = cfg.params["MAX_SENT_LEN"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
-    assert model_type in ["e2e", 'lstm'], "model type unrecognised or unsupported!"
+    assert model_type in ["bert", 'lstm'], "model type unrecognised or unsupported!"
 
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
-    if model_type == "e2e":
-        text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
+    if model_type == "bert":
+        text_model = BertTextModel(trained_model=base_path + '_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
 

@@ -12,7 +12,7 @@ from src.Attacks.utils.pwws_utils import nlp, get_synonym_options, get_named_ent
     calculate_word_saliency, delta_p_star
 
 import tensorflow as tf
-from src.TextModels.E2EBert import E2EBertTextModel
+from src.TextModels.Bert import BertTextModel
 from src.TextModels.WordLSTM import WordLSTM
 from src.Environments.utils.action_utils import get_similarity
 from src.Config.Config import Config
@@ -70,8 +70,8 @@ if __name__ == '__main__':
     # load data and model
     data_path = base_path + f'_sample_{model_type}.csv'
     text_model = None
-    if model_type == "e2e":
-        text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth')
+    if model_type == "bert":
+        text_model = BertTextModel(trained_model=base_path + '_bert.pth')
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth')
     else:

@@ -17,7 +17,7 @@ sys.path.insert(1, LIB_DIR)
 from src.Environments.utils.action_utils import replace_with_synonym_greedy, get_similarity, possible_actions
 
 # importing the text model attacked and used for embedding
-from src.TextModels.E2EBert import E2EBertTextModel
+from src.TextModels.Bert import BertTextModel
 from src.TextModels.WordLSTM import WordLSTM
 
 # importing the textfooler word_importance
@@ -84,7 +84,7 @@ def prepare_data(path, df_train, df_test, text_model, use_pre_calculated=False, 
     return full_train_emb, test_emb, full_train_mask, test_mask, full_train_imp, test_imp
 
 
-def embed_all_texts(text_model: E2EBertTextModel, texts: list):
+def embed_all_texts(text_model: BertTextModel, texts: list):
     # maybe change to batch proccessing in the future
     emb_list = []
     for text in texts:
@@ -99,7 +99,7 @@ def mask_all_texts(texts: list):
     return torch.tensor(np.concatenate(mask_list))
 
 
-def importance_all_texts(text_model: E2EBertTextModel, texts: list, imp_type: str, sess: tf.Session):
+def importance_all_texts(text_model: BertTextModel, texts: list, imp_type: str, sess: tf.Session):
     imp_list = []
     for text in texts:
         imp_list.append(zero_pad(calc_word_importance(text, text_model, imp_type, sess)).reshape(1, -1))
@@ -195,7 +195,7 @@ def train(train_emb, train_mask, train_imp, val_emb=None, val_mask=None, val_imp
     return model, best_epoch, best_loss
 
 
-def attack_sent(sent: str, text_model: E2EBertTextModel, max_turns: int, sess: tf.Session, word_importance: np.array):
+def attack_sent(sent: str, text_model: BertTextModel, max_turns: int, sess: tf.Session, word_importance: np.array):
     word_rank = list(reversed(np.argsort(word_importance)))
     orig_pred = np.argmax(text_model.predict_proba(sent)[0])
     legal_actions = possible_actions(sent)
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     N_SPLITS = 5
     MAX_TURNS = 300000
     SEED = 42
-    model_type = 'lstm'
+    model_type = 'bert'
     train_size = 5  # this lets us load the pre-computed vectors and just sub-sample them for efficiency
     attack_type = 'pwws'  # whether we are generalising textfooler or PWWS
     pre_calc_data = False  # whether to use pre-calculated data (embedding, masks and word - importance)
@@ -236,12 +236,12 @@ if __name__ == '__main__':
     df.drop_duplicates('content', inplace=True)
 
     text_model = None
-    if model_type == 'e2e':
-        text_model = E2EBertTextModel(trained_model=path + 'e2e_bert.pth')
+    if model_type == 'bert':
+        text_model = BertTextModel(trained_model=path + '_bert.pth')
     elif model_type == 'lstm':
         text_model = WordLSTM(trained_model=path + '_word_lstm.pth')
     else:
-        print('non-existent model type selected, please select one of ["lstm", "e2e"]')
+        print('non-existent model type selected, please select one of ["lstm", "bert"]')
         exit()
 
     df_train = df.iloc[train_inds]

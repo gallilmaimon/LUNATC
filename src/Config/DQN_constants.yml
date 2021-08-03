@@ -7,7 +7,7 @@ SEED: 42  # the random seed
 DEVICE: 'cuda'  # which device to use
 AGENT_TYPE: 'dqn'  # agent used to attack ['dqn', 'dqn_contin']
 MEMORY_SIZE: 10000  # the number of transition tuples to store in the DQN agent's memory
-MODEL_TYPE: 'e2e'  # attacked model type: BERT, or Word-LSTM ['e2e', 'lstm']
+MODEL_TYPE: 'bert'  # attacked model type: BERT, or Word-LSTM ['bert', 'lstm']
 BATCH_SIZE: 128   # number of transitions to sample for training the agent at each step
 NUM_EPISODES: 1000  # number of episodes to "play" for each text if attacking individually, or in test mode, or total number of rounds for universal attacks
 EARLY_STOPPING: 10  # the reward above which the attack stops, set to above 200 for no early stopping. when aiming for any attack, and not necessarily the best this speeds things up
