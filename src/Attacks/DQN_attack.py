@@ -10,7 +10,6 @@ LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
 from src.TextModels.E2EBert import E2EBertTextModel
-from src.TextModels.TransferBert import TransferBertTextModel
 from src.TextModels.WordLSTM import WordLSTM
 from src.Attacks.Agents.Normalizers.norm_utils import get_normaliser
 from src.Attacks.Agents.DQNAgent import DQNAgent
@@ -40,13 +39,11 @@ def attack_individually(model_type: str = "e2e"):
     mem_size = cfg.params["MEMORY_SIZE"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
-    assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
+    assert model_type in ["e2e", 'lstm'], "model type unrecognised or unsupported!"
 
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
-    if model_type == "transfer":
-        text_model = TransferBertTextModel(trained_model=base_path + '.pth')
-    elif model_type == "e2e":
+    if model_type == "e2e":
         text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
@@ -113,11 +110,11 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
     mem_size = cfg.params["MEMORY_SIZE"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
-    assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
+    assert model_type in ["e2e", 'lstm'], "model type unrecognised or unsupported!"
 
     print(f"Starting epoch number: {epoch}")
     # generate data
-    data_path = base_path + '_sample.csv'
+    data_path = base_path + f'_sample_{model_type}.csv'
     df = pd.read_csv(data_path)
     # take smaller subset
     df = df.iloc[eval(cfg.params['ATTACKED_INDICES'])]
@@ -127,9 +124,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "e2e"):
 
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
-    if model_type == "transfer":
-        text_model = TransferBertTextModel(trained_model=base_path + '.pth')
-    elif model_type == "e2e":
+    if model_type == "e2e":
         text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
@@ -184,19 +179,17 @@ def test_trained_model(model_type: str = "e2e", epoch: int = 0):
     n_actions = cfg.params["MAX_SENT_LEN"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
-    assert model_type in ["e2e", "transfer", 'lstm'], "model type unrecognised or unsupported!"
+    assert model_type in ["e2e", 'lstm'], "model type unrecognised or unsupported!"
 
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
-    if model_type == "transfer":
-        text_model = TransferBertTextModel(trained_model=base_path + '.pth')
-    elif model_type == "e2e":
+    if model_type == "e2e":
         text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
 
     # generate data
-    data_path = base_path + '_sample.csv'
+    data_path = base_path + f'_sample_{model_type}.csv'
     df = pd.read_csv(data_path)
 
     general_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"

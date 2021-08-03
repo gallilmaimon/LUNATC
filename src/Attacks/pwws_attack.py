@@ -12,7 +12,6 @@ from src.Attacks.utils.pwws_utils import nlp, get_synonym_options, get_named_ent
     calculate_word_saliency, delta_p_star
 
 import tensorflow as tf
-from src.TextModels.TransferBert import TransferBertTextModel
 from src.TextModels.E2EBert import E2EBertTextModel
 from src.TextModels.WordLSTM import WordLSTM
 from src.Environments.utils.action_utils import get_similarity
@@ -69,11 +68,9 @@ if __name__ == '__main__':
     tf_sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
     # load data and model
-    data_path = base_path + '_sample.csv'
+    data_path = base_path + f'_sample_{model_type}.csv'
     text_model = None
-    if model_type == "transfer":
-        text_model = TransferBertTextModel(trained_model=base_path + '.pth')
-    elif model_type == "e2e":
+    if model_type == "e2e":
         text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth')
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth')

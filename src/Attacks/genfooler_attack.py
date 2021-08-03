@@ -232,7 +232,7 @@ if __name__ == '__main__':
     os.makedirs(path + f'_genfooler_{model_type}', exist_ok=True)
 
     # read data
-    df = pd.read_csv(path + '_sample.csv')
+    df = pd.read_csv(path + f'_sample_{model_type}.csv')
     df.drop_duplicates('content', inplace=True)
 
     text_model = None

@@ -10,7 +10,6 @@ LIB_DIR = os.path.abspath(__file__).split('src')[0]
 sys.path.insert(1, LIB_DIR)
 
 from src.TextModels.TextModel import TextModel
-from src.TextModels.TransferBert import TransferBertTextModel
 from src.TextModels.WordLSTM import WordLSTM
 from src.TextModels.E2EBert import E2EBertTextModel
 from src.Environments.utils.action_utils import replace_with_synonym, get_similarity, replace_with_synonym_greedy, possible_actions
@@ -64,11 +63,9 @@ if __name__ == '__main__':
     tf_sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
 
     # load data and model
-    data_path = base_path + '_sample.csv'
+    data_path = base_path + f'_sample_{model_type}.csv'
     text_model = None
-    if model_type == "transfer":
-        text_model = TransferBertTextModel(trained_model=base_path + '.pth')
-    elif model_type == "e2e":
+    if model_type == "e2e":
         text_model = E2EBertTextModel(trained_model=base_path + 'e2e_bert.pth')
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth')
