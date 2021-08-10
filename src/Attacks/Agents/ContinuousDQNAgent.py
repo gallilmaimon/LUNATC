@@ -240,7 +240,7 @@ class ContinuousDQNAgent:
             words = np.array(text.split())[legal_moves.cpu()[0]]
         return torch.cat([self.word2vec[word] for word in words]).to(self.device) + 1 * self.position_encoding[legal_moves].to(self.device)
 
-    def save_agent(self, path):
+    def save_agent(self, path, slim=False):
         os.makedirs(path, exist_ok=True)
         # save models and optimiser
         torch.save(self.policy_net.state_dict(), path + '/policy.pth')
@@ -260,8 +260,13 @@ class ContinuousDQNAgent:
             pickle.dump(self.norm, f)
 
         # save memory
+        if slim:
+            memory = PrioritisedMemory(self.memory.capacity) if cfg.params["MEM_TYPE"] == 'priority' \
+                else ReplayMemory(self.memory.capacity)
+        else:
+            memory = self.memory
         with open(path + '/memory.pkl', 'wb') as f:
-            pickle.dump(self.memory, f)
+            pickle.dump(memory, f)
 
     def load_agent(self, path):
         # load models and optimiser
