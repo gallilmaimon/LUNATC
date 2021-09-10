@@ -46,14 +46,22 @@ Preprocessing the texts, and training the model:
 
 - Now use [data/preprocess-data](https://github.com/gallilmaimon/LUNATC/blob/master/data/preprocess%20data.ipynb) for generating the same data samples used in the paper.
 
-## Spliting the dataset into groups
+## generating the agent's train and test sets
 Defintion of the agent training and test sets. To generate them from scratch (and see how the texts were chosen) one needs to first attack all model test texts using our imolementation of [textfooler](https://github.com/gallilmaimon/LUNATC/blob/master/src/Attacks/textfooler_attack.py), [PWWS](https://github.com/gallilmaimon/LUNATC/blob/master/src/Attacks/textfooler_attack.py) (change the attack type parameter), and [randomly attack](https://github.com/gallilmaimon/LUNATC/blob/master/src/Attacks/DQN_attack.py) for 100 rounds (tweak accordingly). Then take only the texts which textfooler managed to attack, and take the first *train_size* of them as training samples, and all other succesful attacks are used as test, while sometimes selecting only a subset for runtime considerations.
 
 The pre-calculated indices of each set appear in this [file](), for your ease of use.
 
 ## Performing the attacks
 
-To attack using LUNATC described in the paper, change the [configuration file](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/DQN_constants.yml) according to the following table, and the dataset (indicated by the base path), and the indices (based on the previous section). Other fields should remain the same. 
+To attack using LUNATC described in the paper, change the [configuration file](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/DQN_constants.yml) according to the following table, and the dataset (indicated by the base path), and the indices (based on the previous section). Seeds used are 42, 43, 44. Model type depends on the attacked model. Other fields should remain the same as original.
+
+| Train Size           | 500       | 750   | 950   | 25k   | 50k   |
+| :--------------------|:----------| :-----| :-----| :-----| :-----|
+| Num Episodes         | 25000     | 25000 | 25000 | 50000 | 50000 |
+| Memory Size          | 10000     | 15000 | 20000 | 25000 | 25000 |
+| Target Update        | 2500      | 3750  | 5000  | 12500 | 12500 |
+| Eps Decay            | 7500      | 11250 | 15000 | 37500 | 37500 |
+| Num Rounds (in code) | 2         |    4  |  4    | 3     | 1     |
 
 
 Afterwards run this command:
