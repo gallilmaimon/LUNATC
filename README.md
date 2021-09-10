@@ -46,10 +46,10 @@ Preprocessing the texts, and training the model:
 
 - Now use [data/preprocess-data](https://github.com/gallilmaimon/LUNATC/blob/master/data/preprocess%20data.ipynb) for generating the same data samples used in the paper.
 
-## generating the agent's train and test sets
+## Generating the agent's train and test sets
 Defintion of the agent training and test sets. To generate them from scratch (and see how the texts were chosen) one needs to first attack all model test texts using our imolementation of [textfooler](https://github.com/gallilmaimon/LUNATC/blob/master/src/Attacks/textfooler_attack.py), [PWWS](https://github.com/gallilmaimon/LUNATC/blob/master/src/Attacks/textfooler_attack.py) (change the attack type parameter), and [randomly attack](https://github.com/gallilmaimon/LUNATC/blob/master/src/Attacks/DQN_attack.py) for 100 rounds (tweak accordingly). Then take only the texts which textfooler managed to attack, and take the first *train_size* of them as training samples, and all other succesful attacks are used as test, while sometimes selecting only a subset for runtime considerations.
 
-The pre-calculated indices of each set appear in this [file](), for your ease of use.
+The pre-calculated indices of each set appear in this attack-indices file, for your ease of use.
 
 ## Performing the attacks
 
