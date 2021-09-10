@@ -55,7 +55,7 @@ The pre-calculated indices of each set appear in this [file](), for your ease of
 
 To attack using LUNATC described in the paper, change the [configuration file](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/DQN_constants.yml) according to the following table, and the dataset (indicated by the base path), and the indices (based on the previous section). Seeds used are 42, 43, 44. Model type depends on the attacked model. Other fields should remain the same as original.
 
-| Train Size           | 500       | 750   | 950   | 25k   | 50k   |
+| Parameter\Train Size | 500       | 750   | 950   | 25k   | 50k   |
 | :--------------------|:----------| :-----| :-----| :-----| :-----|
 | Num Episodes         | 25000     | 25000 | 25000 | 50000 | 50000 |
 | Memory Size          | 10000     | 15000 | 20000 | 25000 | 25000 |
