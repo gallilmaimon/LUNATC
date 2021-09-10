@@ -38,6 +38,7 @@ Downloading the datasets:
 1) IMDB - download from this [link](https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz), and extract the zip in the data/aclImdb folder.
 
 2) Toxic-Wikipedia - download test_labels.csv.zip, test.csv.zip, train.csv.zip from [here](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data), and extract them in the data/toxic folder.
+3) PUBMED - for full reproducibility we suggest you use our provided parsed dataset. If you want te reproduce it (with updated files for instance) download the new xmls from pubmed and use the code in data/parse Pumbed.ipynb.
 
 Preprocessing the texts, and training the model:
 - The [data/preprocess-data](https://github.com/gallilmaimon/LUNATC/blob/master/data/preprocess%20data.ipynb) shows how to get from each of the datasets downloaded to a single format suitable for training a BERT or word-LSTM classifier.
