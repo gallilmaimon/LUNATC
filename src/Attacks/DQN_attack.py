@@ -11,6 +11,8 @@ sys.path.insert(1, LIB_DIR)
 
 from src.TextModels.Bert import BertTextModel
 from src.TextModels.WordLSTM import WordLSTM
+from src.TextModels.XLNet import XLNetTextModel
+
 from src.Attacks.Agents.Normalizers.norm_utils import get_normaliser
 from src.Attacks.Agents.DQNAgent import DQNAgent
 from src.Attacks.Agents.ContinuousDQNAgent import ContinuousDQNAgent
@@ -39,7 +41,7 @@ def attack_individually(model_type: str = "bert"):
     mem_size = cfg.params["MEMORY_SIZE"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
-    assert model_type in ["bert", 'lstm'], "model type unrecognised or unsupported!"
+    assert model_type in ["bert", 'lstm', 'xlnet'], "model type unrecognised or unsupported!"
 
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
@@ -47,6 +49,8 @@ def attack_individually(model_type: str = "bert"):
         text_model = BertTextModel(trained_model=base_path + '_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
+    elif model_type == "xlnet":
+        text_model = XLNetTextModel(trained_model=base_path + '_xlnet.pth')
 
     # generate data
     data_path = base_path + f'_sample_{model_type}.csv'
@@ -110,7 +114,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "bert"):
     mem_size = cfg.params["MEMORY_SIZE"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
-    assert model_type in ["bert", 'lstm'], "model type unrecognised or unsupported!"
+    assert model_type in ["bert", 'lstm', 'xlnet'], "model type unrecognised or unsupported!"
 
     print(f"Starting epoch number: {epoch}")
     # generate data
@@ -128,6 +132,8 @@ def pretrain_attack_model(epoch=0, model_type: str = "bert"):
         text_model = BertTextModel(trained_model=base_path + '_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
+    elif model_type == "xlnet":
+        text_model = XLNetTextModel(trained_model=base_path + '_xlnet.pth')
 
     # normaliser
     norm_states = None
@@ -179,7 +185,7 @@ def test_trained_model(model_type: str = "bert", epoch: int = 0):
     n_actions = cfg.params["MAX_SENT_LEN"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
-    assert model_type in ["bert", 'lstm'], "model type unrecognised or unsupported!"
+    assert model_type in ["bert", 'lstm', 'xlnet'], "model type unrecognised or unsupported!"
 
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
@@ -187,6 +193,8 @@ def test_trained_model(model_type: str = "bert", epoch: int = 0):
         text_model = BertTextModel(trained_model=base_path + '_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
+    elif model_type == "xlnet":
+        text_model = XLNetTextModel(trained_model=base_path + '_xlnet.pth')
 
     # generate data
     data_path = base_path + f'_sample_{model_type}.csv'

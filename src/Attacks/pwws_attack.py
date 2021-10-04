@@ -14,6 +14,8 @@ from src.Attacks.utils.pwws_utils import nlp, get_synonym_options, get_named_ent
 import tensorflow as tf
 from src.TextModels.Bert import BertTextModel
 from src.TextModels.WordLSTM import WordLSTM
+from src.TextModels.XLNet import XLNetTextModel
+
 from src.Environments.utils.action_utils import get_similarity
 from src.Config.Config import Config
 
@@ -74,6 +76,8 @@ if __name__ == '__main__':
         text_model = BertTextModel(trained_model=base_path + '_bert.pth')
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth')
+    elif model_type == "xlnet":
+        text_model = XLNetTextModel(trained_model=base_path + '_xlnet.pth')
     else:
         print("please choose a valid kind of model type!")
         exit(1)

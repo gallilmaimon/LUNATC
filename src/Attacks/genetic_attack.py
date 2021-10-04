@@ -12,6 +12,8 @@ sys.path.insert(1, LIB_DIR)
 from src.TextModels.TextModel import TextModel
 from src.TextModels.WordLSTM import WordLSTM
 from src.TextModels.Bert import BertTextModel
+from src.TextModels.XLNet import XLNetTextModel
+
 from src.Environments.utils.action_utils import replace_with_synonym, replace_with_synonym_greedy, possible_actions, possible_synonyms
 from src.Attacks.utils.pwws_utils import softmax
 from src.Config.Config import Config
@@ -75,6 +77,8 @@ if __name__ == '__main__':
         text_model = BertTextModel(trained_model=base_path + '_bert.pth')
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth')
+    elif model_type == "xlnet":
+        text_model = XLNetTextModel(trained_model=base_path + '_xlnet.pth')
     else:
         print("please choose a valid kind of TEXT_MODEL!")
         exit(1)

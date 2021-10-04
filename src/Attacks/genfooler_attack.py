@@ -19,6 +19,8 @@ from src.Environments.utils.action_utils import replace_with_synonym_greedy, get
 # importing the text model attacked and used for embedding
 from src.TextModels.Bert import BertTextModel
 from src.TextModels.WordLSTM import WordLSTM
+from src.TextModels.XLNet import XLNetTextModel
+
 
 # importing the textfooler word_importance
 from src.Attacks.textfooler_attack import calc_word_importance
@@ -240,6 +242,8 @@ if __name__ == '__main__':
         text_model = BertTextModel(trained_model=path + '_bert.pth')
     elif model_type == 'lstm':
         text_model = WordLSTM(trained_model=path + '_word_lstm.pth')
+    elif model_type == "xlnet":
+        text_model = XLNetTextModel(trained_model=path + '_xlnet.pth')
     else:
         print('non-existent model type selected, please select one of ["lstm", "bert"]')
         exit()

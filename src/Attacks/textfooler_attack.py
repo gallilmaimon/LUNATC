@@ -12,6 +12,7 @@ sys.path.insert(1, LIB_DIR)
 from src.TextModels.TextModel import TextModel
 from src.TextModels.WordLSTM import WordLSTM
 from src.TextModels.Bert import BertTextModel
+from src.TextModels.XLNet import XLNetTextModel
 from src.Environments.utils.action_utils import replace_with_synonym, get_similarity, replace_with_synonym_greedy, possible_actions
 from src.Config.Config import Config
 from src.Attacks.utils.pwws_utils import softmax
@@ -57,7 +58,7 @@ if __name__ == '__main__':
     base_path = cfg.params["base_path"]
     MAX_TURNS = cfg.params["MAX_TURNS"]
     model_type = cfg.params["MODEL_TYPE"]
-    attack_type = 'tf'
+    attack_type = 'pwws'
 
     tf_sess = tf.Session()
     tf_sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
@@ -69,6 +70,8 @@ if __name__ == '__main__':
         text_model = BertTextModel(trained_model=base_path + '_bert.pth')
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth')
+    elif model_type == "xlnet":
+        text_model = XLNetTextModel(trained_model=base_path + '_xlnet.pth')
     else:
         print("please choose a valid kind of TEXT_MODEL!")
         exit(1)
