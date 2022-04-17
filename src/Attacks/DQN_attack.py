@@ -39,6 +39,7 @@ def attack_individually(model_type: str = "bert"):
     norm_rounds = cfg.params["NORMALISE_ROUNDS"]
     handle_out = cfg.params["HANDLE_OUT"]
     mem_size = cfg.params["MEMORY_SIZE"]
+    num_classes = cfg.params["NUM_CLASSES"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
     assert model_type in ["bert", 'lstm', 'xlnet'], "model type unrecognised or unsupported!"
@@ -46,7 +47,7 @@ def attack_individually(model_type: str = "bert"):
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
     if model_type == "bert":
-        text_model = BertTextModel(trained_model=base_path + '_bert.pth', device=device)
+        text_model = BertTextModel(num_classes=num_classes, trained_model=base_path + '_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
     elif model_type == "xlnet":
@@ -55,6 +56,11 @@ def attack_individually(model_type: str = "bert"):
     # generate data
     data_path = base_path + f'_sample_{model_type}.csv'
     df = pd.read_csv(data_path)
+
+    # used for 2 text tasks like NLI
+    if "content2" in df.columns:
+        df["content"] = list(zip(df.content, df.content2))
+        df = df.drop("content2", 1)
 
     cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
     os.makedirs(cur_path, exist_ok=True)
@@ -78,7 +84,7 @@ def attack_individually(model_type: str = "bert"):
         norm = get_normaliser(state_shape, norm_rounds, norm_states, None, device=device) if norm_rounds != -1 else None
 
         # agent
-        n_actions = len(sent_list[0].split())
+        n_actions = len(sent_list[0].split()) if type(sent_list[0]) != tuple else len(sent_list[0][1].split())
         dqn = None
         if cfg.params['AGENT_TYPE'] == 'dqn':
             dqn = DQNAgent(sent_list, text_model, n_actions, norm, device, mem_size)

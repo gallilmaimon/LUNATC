@@ -4,8 +4,12 @@ from collections import defaultdict
 
 
 def embed_texts(texts, model, tokeniser, num_hiddens=4, maxlen=256, device="cuda"):
-    inputs = tokeniser(texts, padding=True, truncation=True, max_length=maxlen, pad_to_multiple_of=maxlen,
-                       return_tensors='pt')
+    if type(texts) == tuple:
+        inputs = tokeniser(*texts, padding=True, truncation=True, max_length=maxlen, pad_to_multiple_of=maxlen,
+                           return_tensors='pt')
+    else:
+        inputs = tokeniser(texts, padding=True, truncation=True, max_length=maxlen, pad_to_multiple_of=maxlen,
+                           return_tensors='pt')
 
     inputs['input_ids'] = inputs['input_ids'].to(device)
     inputs['attention_mask'] = inputs['attention_mask'].to(device)

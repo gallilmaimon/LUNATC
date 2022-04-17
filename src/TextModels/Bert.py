@@ -12,10 +12,10 @@ class BertTextModel(TextModel):
     def __init__(self, num_classes=2, trained_model=None, bert_type='bert-base-uncased', device="cuda"):
         self.num_classes = num_classes
 
-        # end2end bert for sequence classification (the model being "attacked")
+        # bert for sequence classification (the model being "attacked")
         self.bert_tokeniser = BertTokenizer.from_pretrained(bert_type, do_lower_case=True)
         if trained_model is not None:
-            bert_config = BertConfig.from_pretrained(bert_type)
+            bert_config = BertConfig.from_pretrained(bert_type, num_labels=num_classes)
             self.model = BertForSequenceClassification.from_pretrained(None, config=bert_config,
                                                                        state_dict=torch.load(trained_model))
         else:
@@ -50,20 +50,25 @@ class BertTextModel(TextModel):
         return embed
 
     def predict_proba(self, X):
-        if type(X) != list and X in self.proba_cache:
+        if (not (type(X) == list or (type(X) == tuple and type(X[0]) == list))) and X in self.proba_cache:
             return self.proba_cache[X]
 
         self.model.eval()
         with torch.no_grad():
-            inputs = self.bert_tokeniser(X, padding=True, truncation=True, max_length=256, pad_to_multiple_of=256,
-                                         return_tensors='pt')
+            if type(X) == tuple or (type(X) == list and type(X[0]) == tuple):
+                # relevant for multi text models
+                inputs = self.bert_tokeniser(*X, padding=True, truncation=True, max_length=256, pad_to_multiple_of=256,
+                                             return_tensors='pt')
+            else:
+                inputs = self.bert_tokeniser(X, padding=True, truncation=True, max_length=256, pad_to_multiple_of=256,
+                                             return_tensors='pt')
 
             sent_token = inputs['input_ids'].to(self.device)
             sent_att = inputs['attention_mask'].to(self.device)
             # res = F.softmax(self.model(sent_token, attention_mask=sent_att)[0])
             res = self.model(sent_token, attention_mask=sent_att)[0]
             probs = res.detach().cpu().numpy()
-        if type(X) != list:
+        if not (type(X) == list or (type(X) == tuple and type(X[0]) == list)):
             self.proba_cache[X] = probs
         return probs
 

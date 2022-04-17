@@ -5,6 +5,7 @@ import torch
 import os
 import pickle
 import re
+from copy import deepcopy
 
 from src.Attacks.utils.pwws_utils import softmax
 
@@ -202,11 +203,13 @@ keyboard_model = nmc.Keyboard(special_char=False, numeric=False, upper_case=Fals
 misspell_words_model = nmwd.Spelling(LIB_DIR + '/resources/spelling/spelling_en.txt')
 
 
-# end region constants
+# endregion constants
 
 
 # region utility functions
 def possible_actions(text):
+    if type(text) == tuple:  # For multi input tasks like NLI
+        text = text[1]
     words = text.split()
     content_words = [i for i, w in enumerate(words) if w not in STOPWORDS and w in word_vectors]
     return content_words
@@ -635,10 +638,15 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=50, wor
     :param debug: a flag for extra printed information
     :return: the new text after the replacement
     """
+    orig = deepcopy(text)
+    text1 = None
+    if type(text) == tuple:  # for multi input tasks like NLI
+        text1, text = text
+
     new_text, new_word_index = get_words_local_env(text, word_index)
     # look in cache of previously calculated actions
-    if (text, int(word_index)) in synonym_act_dict:
-        return synonym_act_dict[(text, int(word_index))]
+    if (orig, int(word_index)) in synonym_act_dict:
+        return synonym_act_dict[(orig, int(word_index))]
 
     # Get the list of words from the entire text
     words = new_text.split()
@@ -648,22 +656,22 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=50, wor
 
     # if word not in vocabulary
     if word in STOPWORDS or word not in word_vectors:
-        synonym_act_dict[(text, int(word_index))] = text
-        return text
+        synonym_act_dict[(orig, int(word_index))] = orig
+        return orig
 
     # find synonym options
     rep_options = possible_synonyms(word, topn, word_sim_thresh, debug)
 
     # no good enough synonyms
     if len(rep_options) == 0:
-        synonym_act_dict[(text, int(word_index))] = text
-        return text
+        synonym_act_dict[(orig, int(word_index))] = orig
+        return orig
 
     # get only those with same POS
     same_pos_inds = get_same_POS_replacements(text, word_index, rep_options)
     if len(same_pos_inds) == 0:
-        synonym_act_dict[(text, int(word_index))] = text
-        return text
+        synonym_act_dict[(orig, int(word_index))] = orig
+        return orig
     rep_options = itemgetter(*same_pos_inds)(rep_options)
     if type(rep_options) == str:
         rep_options = list([rep_options])
@@ -686,33 +694,38 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=50, wor
     all_words = text.split()
     for opt in rep_options:
         all_words[word_index] = opt
-        sent_options.append(' '.join(all_words))
+        sent_options.append((text1, ' '.join(all_words)))
 
     if cand_mask.sum() == 1:
-        synonym_act_dict[(text, int(word_index))] = [i for (i, v) in zip(sent_options, cand_mask) if v][0]
+        synonym_act_dict[(orig, int(word_index))] = [i for (i, v) in zip(sent_options, cand_mask) if v][0]
         return [i for (i, v) in zip(sent_options, cand_mask) if v][0]
     elif cand_mask.sum() > 1:
         sent_options = [i for (i, v) in zip(sent_options, cand_mask) if v]
         print('sent options: ', sent_options) if debug else ''
         sentence_similarity = sentence_similarity[cand_mask]
-        orig_probs = text_model.predict_proba(text)[0]
+        orig_probs = text_model.predict_proba(text)[0] if text1 is None else text_model.predict_proba((text1, text))[0]
+        print('orig_logits', orig_probs) if debug else ''
         orig_pred = np.argmax(orig_probs)
-        new_probs = softmax(text_model.predict_proba(sent_options), axis=1)[:, orig_pred]
-        # new_probs = [softmax(text_model.predict_proba(new_sent)[0], axis=0)[orig_pred] for new_sent in sent_options]
-        print('new probs: ', new_probs) if debug else ''
-        changed_class = list(map(lambda x: x < 0.5, new_probs))
+        if text1 is None:
+            new_probs = text_model.predict_proba(sent_options)
+        else:
+            new_probs = text_model.predict_proba(tuple(zip(*sent_options)))
+        print('new logits: ', new_probs) if debug else ''
+        print('new probs', softmax(new_probs, axis=1)) if debug else ''
+
+        changed_class = (np.argmax(new_probs, axis=1) != orig_pred)
         if sum(changed_class) >= 1:
             cur_sent_options = [i for (i, v) in zip(sent_options, changed_class) if v]
-            synonym_act_dict[(text, int(word_index))] = cur_sent_options[np.argmax(sentence_similarity[changed_class])]
+            synonym_act_dict[(orig, int(word_index))] = cur_sent_options[np.argmax(sentence_similarity[changed_class])]
             print('result: ', cur_sent_options[np.argmax(sentence_similarity[changed_class])]) if debug else ''
             return cur_sent_options[np.argmax(sentence_similarity[changed_class])]
-        synonym_act_dict[(text, int(word_index))] = sent_options[np.argmin(new_probs)]
-        print('result2: ', sent_options[np.argmin(new_probs)]) if debug else ''
+        synonym_act_dict[(text, int(word_index))] = sent_options[np.argmin(softmax(new_probs, axis=1)[:, orig_pred])]
+        print('result2: ', sent_options[np.argmin(softmax(new_probs, axis=1)[:, orig_pred])]) if debug else ''
 
-        return sent_options[np.argmin(new_probs)]
+        return sent_options[np.argmin(softmax(new_probs, axis=1)[:, orig_pred])]
 
-    synonym_act_dict[(text, int(word_index))] = text
-    return text
+    synonym_act_dict[(orig, int(word_index))] = orig
+    return orig
 
 
 def remove_word(text, word_index):

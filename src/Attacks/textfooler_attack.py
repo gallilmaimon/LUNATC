@@ -19,11 +19,16 @@ from src.Attacks.utils.pwws_utils import softmax
 
 
 def calc_word_importance(sent: str, text_model: TextModel, imp_type: str = 'tf', sess: tf.Session = None) -> list:
-    words = sent.split()
+    if type(sent) == tuple:
+        words = sent[1].split()
+    else:
+        words = sent.split()
     orig_probs = softmax(text_model.predict_proba(sent)[0])
     orig_pred = np.argmax(orig_probs)
     orig_prob = orig_probs[orig_pred]
     new_sents = [' '.join(words[:i] + ['<oov>'] + words[i + 1:]) for i in range(len(words))]
+    if type(sent) == tuple:
+        new_sents = [(sent[0], t) for t in new_sents]
     tf_imp = [orig_prob - softmax(text_model.predict_proba(new_sent)[0])[orig_pred] for new_sent in new_sents]
     if imp_type == 'tf':
         return tf_imp
@@ -47,7 +52,7 @@ def attack_sent(sent: str, text_model: TextModel, attack_type: str, max_turns: i
     for word_index in word_importance:
         cur_sent = replace_with_synonym_greedy(cur_sent, word_index, text_model, sess)
         if text_model.predict(cur_sent)[0] != orig_pred:
-            return cur_sent, get_similarity([sent, cur_sent], sess)[0]
+            return cur_sent, get_similarity([sent[1], cur_sent[1]], sess)[0]
 
     return cur_sent, 0
 
@@ -58,6 +63,7 @@ if __name__ == '__main__':
     base_path = cfg.params["base_path"]
     MAX_TURNS = cfg.params["MAX_TURNS"]
     model_type = cfg.params["MODEL_TYPE"]
+    num_classes = cfg.params["NUM_CLASSES"]  # Relevant only for BERT - 3 for MNLI, and 2 otherwise
     attack_type = 'pwws'
 
     tf_sess = tf.Session()
@@ -65,9 +71,10 @@ if __name__ == '__main__':
 
     # load data and model
     data_path = base_path + f'_sample_{model_type}.csv'
+
     text_model = None
     if model_type == "bert":
-        text_model = BertTextModel(trained_model=base_path + '_bert.pth')
+        text_model = BertTextModel(num_classes=num_classes, trained_model=base_path + '_bert.pth')
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth')
     elif model_type == "xlnet":
@@ -82,10 +89,17 @@ if __name__ == '__main__':
 
     # attack
     df = pd.read_csv(data_path)
+
+    # used for 2 text tasks like NLI
+    if "content2" in df.columns:
+        df["content"] = list(zip(df.content, df.content2))
+        df = df.drop("content2", 1)
+
     df.drop_duplicates('content', inplace=True)
     df.reset_index(drop=True, inplace=True)
     df['best_sent'] = ''
     df['max_score'] = 0.
+
     for n in range(len(df)):
         cur_df = df.iloc[n:n+1]
         sent_list = list(cur_df.content.values)

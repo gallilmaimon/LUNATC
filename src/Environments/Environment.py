@@ -93,7 +93,9 @@ class Environment(ABC):
         if np.argmax(new_proba) == self.original_class:
             return logit_diff + 0.2 * ppl_diff, False, new_s
 
-        return 100 * get_similarity([self.init_sentence, new_s], self.sess)[0] + logit_diff + 0.2 * ppl_diff, True, new_s
+        init_text = self.init_sentence[1] if type(self.init_sentence) == tuple else self.init_sentence
+        new_text = new_s[1] if type(new_s) == tuple else new_s
+        return 100 * get_similarity([init_text, new_text], self.sess)[0] + logit_diff + 0.2 * ppl_diff, True, new_s
 
     @abstractmethod
     def get_legal_moves(self):
