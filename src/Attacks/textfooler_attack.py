@@ -64,7 +64,7 @@ if __name__ == '__main__':
     MAX_TURNS = cfg.params["MAX_TURNS"]
     model_type = cfg.params["MODEL_TYPE"]
     num_classes = cfg.params["NUM_CLASSES"]  # Relevant only for BERT - 3 for MNLI, and 2 otherwise
-    attack_type = 'pwws'
+    attack_type = 'tf'
 
     tf_sess = tf.Session()
     tf_sess.run([tf.global_variables_initializer(), tf.tables_initializer()])

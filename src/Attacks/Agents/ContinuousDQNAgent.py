@@ -232,6 +232,7 @@ class ContinuousDQNAgent:
         self.optimizer.step()
 
     def _get_embedded_actions(self, text, legal_moves):
+        text = text[1] if type(text) == tuple else text
         if type(legal_moves) == list:
             if len(legal_moves) == 0:
                 return None

@@ -118,6 +118,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "bert"):
     norm_rounds = cfg.params["NORMALISE_ROUNDS"]
     handle_out = cfg.params["HANDLE_OUT"]
     mem_size = cfg.params["MEMORY_SIZE"]
+    num_classes = cfg.params["NUM_CLASSES"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
     assert model_type in ["bert", 'lstm', 'xlnet'], "model type unrecognised or unsupported!"
@@ -128,6 +129,11 @@ def pretrain_attack_model(epoch=0, model_type: str = "bert"):
     df = pd.read_csv(data_path)
     # take smaller subset
     df = df.iloc[eval(cfg.params['ATTACKED_INDICES'])]
+    # used for 2 text tasks like NLI
+    if "content2" in df.columns:
+        df["content"] = list(zip(df.content, df.content2))
+        df = df.drop("content2", 1)
+
     print(len(df), flush=True)
     sent_list = list(df.content.values)
     print(sent_list, flush=True)
@@ -135,7 +141,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "bert"):
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
     if model_type == "bert":
-        text_model = BertTextModel(trained_model=base_path + '_bert.pth', device=device)
+        text_model = BertTextModel(num_classes=num_classes, trained_model=base_path + '_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
     elif model_type == "xlnet":
@@ -189,6 +195,7 @@ def test_trained_model(model_type: str = "bert", epoch: int = 0):
     handle_out = cfg.params["HANDLE_OUT"]
     mem_size = cfg.params["MEMORY_SIZE"]
     n_actions = cfg.params["MAX_SENT_LEN"]
+    num_classes = cfg.params["NUM_CLASSES"]
     offline_normalising = True if norm_rounds == 'offline' else False
 
     assert model_type in ["bert", 'lstm', 'xlnet'], "model type unrecognised or unsupported!"
@@ -196,7 +203,7 @@ def test_trained_model(model_type: str = "bert", epoch: int = 0):
     # define text model
     text_model = None  # just to make sure it is not somehow referenced before assignment
     if model_type == "bert":
-        text_model = BertTextModel(trained_model=base_path + '_bert.pth', device=device)
+        text_model = BertTextModel(num_classes=num_classes, trained_model=base_path + '_bert.pth', device=device)
     elif model_type == "lstm":
         text_model = WordLSTM(trained_model=base_path + '_word_lstm.pth', device=device)
     elif model_type == "xlnet":
@@ -205,6 +212,11 @@ def test_trained_model(model_type: str = "bert", epoch: int = 0):
     # generate data
     data_path = base_path + f'_sample_{model_type}.csv'
     df = pd.read_csv(data_path)
+
+    # used for 2 text tasks like NLI
+    if "content2" in df.columns:
+        df["content"] = list(zip(df.content, df.content2))
+        df = df.drop("content2", 1)
 
     general_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
     cur_path = general_path + f"/attack_{epoch}"
@@ -257,7 +269,7 @@ if __name__ == "__main__":
 
     elif attack_type == 'universal':
         general_start = time.time()
-        for epoch in range(5):
+        for epoch in range(3):
             start = time.time()
             pretrain_attack_model(model_type=cfg.params['MODEL_TYPE'], epoch=epoch)
             print('time', time.time() - start)
@@ -265,7 +277,7 @@ if __name__ == "__main__":
 
     elif attack_type == 'test':
         general_start = time.time()
-        for epoch in range(5):
+        for epoch in [2]:
             start = time.time()
             test_trained_model(model_type=cfg.params['MODEL_TYPE'], epoch=epoch)
             print('time', time.time() - start)

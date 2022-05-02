@@ -2,11 +2,11 @@ base_path: '../../data/mnli2/mnli'   # the base path for the data, model, result
 ATTACKED_INDICES: '[6586, 6588, 6590, 6591, 6593, 6596, 6597, 6598, 6599, 6604, 6606, 6607, 6608, 6610, 6612, 6618, 6627, 6634, 6636, 6638, 6640, 6641, 6643, 6648, 6652, 6658, 6661, 6662, 6663, 6664, 6666, 6668, 6670, 6671, 6673, 6674, 6675, 6679, 6682, 6683, 6684, 6685, 6686, 6687, 6689, 6691, 6693, 6695, 6697, 6698, 6699, 6701, 6704, 6706, 6709, 6710, 6712, 6713, 6715, 6716, 6717, 6720, 6723, 6724, 6726, 6727, 6728, 6730, 6731, 6735, 6736, 6737, 6741, 6745, 6746, 6753, 6758, 6759, 6761, 6763, 6765, 6766, 6769, 6771, 6772, 6774, 6777, 6783, 6786, 6788, 6789, 6791, 6792, 6794, 6795, 6796, 6797, 6798, 6799, 6802, 6803, 6804, 6806, 6808, 6810, 6812, 6813, 6814, 6819, 6821, 6822, 6825, 6827, 6828, 6829, 6830, 6834, 6835, 6837, 6839, 6840, 6843, 6846, 6847, 6848, 6850, 6851, 6852, 6853, 6854, 6855, 6856, 6859, 6860, 6861, 6862, 6863, 6867, 6871, 6872, 6874, 6875, 6876, 6877, 6878, 6884, 6886, 6887, 6890, 6891, 6893, 6895, 6896, 6898, 6899, 6900, 6904, 6906, 6908, 6909, 6913, 6915, 6918, 6922, 6924, 6925, 6927, 6930, 6931, 6935, 6941, 6945, 6946, 6949, 6951, 6952, 6953, 6955, 6958, 6960, 6961, 6962, 6964, 6966, 6967, 6970, 6973, 6974, 6984, 6985, 6986, 6988, 6990, 6992, 6995, 6998, 6999, 7003, 7004, 7005, 7007, 7011, 7012, 7014, 7015, 7017, 7018, 7019, 7020, 7023, 7025, 7026, 7028, 7029, 7032, 7033, 7035, 7039, 7042, 7043, 7044, 7046, 7048, 7050, 7052, 7055, 7057, 7060, 7064, 7065, 7067, 7068, 7072, 7073, 7074, 7075, 7076, 7077, 7078, 7082, 7086, 7091, 7092, 7094, 7097, 7098, 7102, 7105, 7109, 7115, 7116, 7119, 7121, 7122, 7123, 7124, 7125, 7129, 7130, 7131]'  # a string describing list of the indices of the dataset to attack, can be 'range(i,j)', or '[i, j, k, m, ...]'
 ENV_TYPE: 'Synonym'  # Environment type - from ['Synonym', 'SynonymDelete', 'SynonymMisspell']
 USE_PPL: False  # boolean of whether to use perplexity (using GPT-2) to select more natural synonyms and integrate this for the reward
-ATTACK_TYPE: 'individual'  # attack each text individually or by learning all text together or by testing a pre-trained agent - from ['individual', 'universal', 'test']
+ATTACK_TYPE: 'test'  # attack each text individually or by learning all text together or by testing a pre-trained agent - from ['individual', 'universal', 'test']
 NUM_CLASSES: 3  # Number of classes, 3 for MNLI and 2 otherwise
-SEED: 51  # the random seed
+SEED: 42  # the random seed
 DEVICE: 'cuda'  # which device to use
-AGENT_TYPE: 'dqn'  # agent used to attack ['dqn', 'dqn_contin']
+AGENT_TYPE: 'dqn_contin'  # agent used to attack ['dqn', 'dqn_contin']
 MEMORY_SIZE: 10000  # the number of transition tuples to store in the DQN agent's memory
 MODEL_TYPE: 'bert'  # attacked model type: BERT, or Word-LSTM ['bert', 'lstm']
 BATCH_SIZE: 128  # number of transitions to sample for training the agent at each step
@@ -16,8 +16,8 @@ MAX_SENT_LEN: 150  # the maximum text length, which influences the number of act
 POLICY_UPDATE: 10000  # every how many agent steps to update the policy network
 TARGET_UPDATE: 7500  # every how many agent episodes to update the target network
 GAMMA: 0.995  # the decay parameter for the A3C loss
-EPS_START: 1.0  # the initial epsilon for epsilon-greedy exploration
-EPS_END: 1.0  # the minimal epsilon for epsilon-greedy exploration
+EPS_START: 0.0  # the initial epsilon for epsilon-greedy exploration
+EPS_END: 0.0  # the minimal epsilon for epsilon-greedy exploration
 EPS_DECAY: 22500  # the decay parameter for epsilon according to the equation: EPS_END + (EPS_START - EPS_END) * exp(-1. * steps_done / EPS_DECAY)
 MAX_TURNS: 30000000  # max number of turns the agent gets in each round
 STATE_SHAPE: 768  # the size of the agent state representation
