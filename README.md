@@ -84,8 +84,7 @@ To evaluate the different approaches, use the [analyse experiments notebook](htt
 ## Citation
 If you found this work useful, please cite the following related article:
 
-'''
-@article{MAIMON2022282,
+```@article{MAIMON2022282,
 title = {A universal adversarial policy for text classifiers},
 journal = {Neural Networks},
 volume = {153},
@@ -98,4 +97,4 @@ author = {Gallil Maimon and Lior Rokach},
 keywords = {Adversarial learning, NLP, Text classification, Universal adversarial attacks, Reinforcement learning},
 abstract = {Discovering the existence of universal adversarial perturbations had large theoretical and practical impacts on the field of adversarial learning. In the text domain, most universal studies focused on adversarial prefixes which are added to all texts. However, unlike the vision domain, adding the same perturbation to different inputs results in noticeably unnatural inputs. Therefore, we introduce a new universal adversarial setup – a universal adversarial policy, which has many advantages of other universal attacks but also results in valid texts – thus making it relevant in practice. We achieve this by learning a single search policy over a predefined set of semantics preserving text alterations, on many texts. This formulation is universal in that the policy is successful in finding adversarial examples on new texts efficiently. Our approach uses text perturbations which were extensively shown to produce natural attacks in the non-universal setup (specific synonym replacements). We suggest a strong baseline approach for this formulation which uses reinforcement learning. Its ability to generalise (from as few as 500 training texts) shows that universal adversarial patterns exist in the text domain as well.}
 }
-'''
+```
