@@ -32,3 +32,8 @@ rm USE.tar.gz
 echo "Downloading Glove word vectors"
 wget -O word_vectors/glove.6B.200d.txt https://www.kaggle.com/datasets/incorpes/glove6b200d/download?datasetVersionNumber=1
 ## endregion
+
+# region Spacy English
+echo "download Spacy en_core_web_sm"
+python -m spacy download en_core_web_sm
+## endregion
