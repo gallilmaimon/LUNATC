@@ -16,6 +16,7 @@ rm counter-fitted-vectors.txt
 ## endregion
 
 ## region USE module
+echo "Downloading Universal Sentence Encoder tf hub module"
 # make directory
 cd ..
 mkdir tf_hub_modules
@@ -28,5 +29,6 @@ rm USE.tar.gz
 ## endregion
 
 ## region Glove vectors
+echo "Downloading Glove word vectors"
 wget -O word_vectors/glove.6B.200d.txt https://www.kaggle.com/datasets/incorpes/glove6b200d/download?datasetVersionNumber=1
 ## endregion
