@@ -22,7 +22,7 @@ cd ..
 mkdir tf_hub_modules
 mkdir tf_hub_modules/USE
 # download tf_hub model
-wget "https://tfhub.dev/google/universal-sentence-encoder/2?tf-hub-format=compressed" -O "USE.tar.gz"
+wget "https://tfhub.dev/google/universal-sentence-encoder/3?tf-hub-format=compressed" -O "USE.tar.gz"
 tar -C tf_hub_modules/USE -xzvf USE.tar.gz
 # cleanup
 rm USE.tar.gz

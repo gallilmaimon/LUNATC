@@ -2,6 +2,7 @@
 resources/*
 !resources/spelling
 !resources/preprocess.sh
+!resources/README.md
 !resources/word_vectors
 resources/word_vectors/*
 !resources/word_vectors/format_wv.py
