@@ -2,6 +2,7 @@ gensim
 spacy
 matplotlib
 nltk
+nlpaug
 numpy
 pandas
 cudatoolkit==10.2
