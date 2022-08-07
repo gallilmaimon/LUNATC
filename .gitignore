@@ -1,9 +1,10 @@
 # resources
 resources/*
 !resources/spelling
+!resources/preprocess.sh
 !resources/word_vectors
 resources/word_vectors/*
-!resources/word_vectors/format_wordvectors.ipynb
+!resources/word_vectors/format_wv.py
 
 # data
 data/*
