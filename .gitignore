@@ -10,7 +10,7 @@ resources/word_vectors/*
 # data
 data/*
 !data/preprocess data.ipynb
-!data/train_BERT.py
+!data/train_transformer.py
 
 # pycache + pycharm + notebook checkpoints
 **/__pycache__

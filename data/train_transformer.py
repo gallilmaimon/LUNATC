@@ -7,8 +7,8 @@ import datetime
 from sklearn.model_selection import train_test_split
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 import torch.nn.functional as F
-from transformers import BertTokenizer
-from transformers import BertForSequenceClassification, AdamW, BertConfig
+from transformers import BertTokenizer, XLNetTokenizer
+from transformers import BertForSequenceClassification, BertConfig, XLNetForSequenceClassification, XLNetConfig, AdamW
 from transformers import get_linear_schedule_with_warmup
 
 # add base path so that can import other files from project
@@ -18,7 +18,8 @@ LIB_DIR = os.path.abspath(__file__).split('data')[0]
 sys.path.insert(1, LIB_DIR)
 
 from src.Attacks.utils.optim_utils import seed_everything
-import src.TextModels.Bert as Bert
+from src.TextModels.Bert import BertTextModel
+from src.TextModels.XLNet import XLNetTextModel
 
 
 def format_time(elapsed):
@@ -48,7 +49,7 @@ def flat_accuracy(preds, labels):
     return (pred_flat == labels_flat).mean()
 
 
-def create_dl(inputs, masks, labels, is_val: bool=True, bs=32) -> DataLoader:
+def create_dl(inputs, masks, labels, is_val: bool = True, bs=32) -> DataLoader:
     data = TensorDataset(inputs, masks, labels)
     sampler = SequentialSampler(data) if is_val else RandomSampler(data)
     return DataLoader(data, sampler=sampler, batch_size=bs)
@@ -104,7 +105,13 @@ def train(args):
     sentences_test = df_test.content.values
     test_labels = df_test.label.values
 
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+    if args.model == 'bert':
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+    elif args.model == 'xlnet':
+        tokenizer = XLNetTokenizer.from_pretrained('xlnet-base-cased', do_lower_case=True)
+    else:
+        print("Unsupported model type, choose from ['bert', 'xlnet'], or open pull request to add further model support")
+        exit(1)
 
     # this can be replaced with batch tokenisation in future release
     # Tokenize all sentences and map the tokens to their word IDs.
@@ -135,8 +142,15 @@ def train(args):
     val_dataloader = create_dl(val_inputs, val_masks, val_labels, True, args.batch_size)
     test_dataloader = create_dl(test_inputs, test_masks, test_labels, True, args.batch_size)
 
-    model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=args.n_classes,
-                                                          output_attentions=False, output_hidden_states=False)
+    if args.model == 'bert':
+        model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=args.n_classes,
+                                                              output_attentions=False, output_hidden_states=False)
+    elif args.model == 'xlnet':
+        model = XLNetForSequenceClassification.from_pretrained("xlnet-base-cased", num_labels=args.n_classes,
+                                                               output_attentions=False, output_hidden_states=False)
+    else:
+        print("Unsupported model type, choose from ['bert', 'xlnet'], or open pull request to add further model support")
+        exit(1)
     model.cuda()
 
     optimizer = AdamW(model.parameters(), lr=args.lr, eps=args.opt_eps)
@@ -228,13 +242,13 @@ def train(args):
         print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
     print("Training complete!")
-    torch.save(model.state_dict(), open(args.data_path+"_bert.pth", 'wb'))
+    torch.save(model.state_dict(), open(args.data_path+f'_{args.model}.pth', 'wb'))
 
 
 def infer(args):
     model_path = args.data_path + '_bert.pth'
     tst_path = args.data_path + '_test_clean.csv'
-    out_path = args.data_path + '_test_pred_bert.csv'
+    out_path = args.data_path + f'_test_pred_{args.model}.csv'
 
     # read the dataset
     tst_df = pd.read_csv(tst_path)
@@ -243,7 +257,13 @@ def infer(args):
         tst_df["content"] = list(zip(tst_df.content, tst_df.content2))
         tst_df = tst_df.drop("content2", 1)
 
-    code_model = Bert.BertTextModel(num_classes=args.n_classes, trained_model=model_path)
+    if args.model == 'bert':
+        code_model = BertTextModel(num_classes=args.n_classes, trained_model=model_path, device=args.device)
+    elif args.model == 'xlnet':
+        code_model = XLNetTextModel(num_classes=args.n_classes, trained_model=model_path, device=args.device)
+    else:
+        print("Unsupported model type, choose from ['bert', 'xlnet'], or open pull request to add further model support")
+        exit(1)
 
     code_preds = []
     for i, text in batch(tst_df.content.values.tolist(), args.batch_size):
@@ -261,6 +281,7 @@ def infer(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default='train', help='Whether to train or inference in [\'train\', \'infer\']')
+    parser.add_argument('--model', default='bert', help='transformer model in [\'bert\', \'xlnet\']')
     parser.add_argument('--data_path', default='data/aclImdb/imdb', help='Path to data')
     parser.add_argument('--device', default='cuda:0', help='Device to run on')
     parser.add_argument('--seed', type=int, default=42, help='random seed, use -1 for non-determinism')
