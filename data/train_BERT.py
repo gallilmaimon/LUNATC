@@ -62,11 +62,15 @@ if __name__ == '__main__':
     device = "cuda"
 
     seed_everything(seed_val)
-
+    
     df = pd.read_csv(data_path+"_train_clean.csv")
     df_train, df_validation = train_test_split(df, test_size=val_size, random_state=seed_val)
     df_test = pd.read_csv(data_path+"_test_clean.csv")
-
+    
+    df_train = df_train.head(1000)
+    df_validation = df_validation.head(1000)
+    df_test = df_test.head(1000)
+    
     # used for 2 text tasks like NLI
     if "content2" in df_train.columns:
         df_train["content"] = list(zip(df_train.content, df_train.content2))
@@ -185,7 +189,7 @@ if __name__ == '__main__':
 
     # Create the DataLoader for our training set.
     train_dataloader = create_dl(train_inputs, train_masks, train_labels, False, batch_size)
-    validation_dataloader = create_dl(validation_inputs, validation_masks, validation_labels, True, batch_size)
+    val_dataloader = create_dl(val_inputs, val_masks, val_labels, True, batch_size)
     test_dataloader = create_dl(test_inputs, test_masks, test_labels, True, batch_size)
 
     model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=NUM_LABELS,
@@ -197,7 +201,60 @@ if __name__ == '__main__':
 
     total_steps = len(train_dataloader) * epochs
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
+    
+    # evaluation only - to make sure that accuracy is more or less random at the beginnig
+    print("")
+    print("Running Validation...")
+    device = "cuda"
+    t0 = time.time()
 
+    model.eval()
+
+    # Tracking variables 
+    eval_loss, eval_accuracy = 0, 0
+    nb_eval_steps, nb_eval_examples = 0, 0
+
+    # Evaluate data for one epoch
+    for batch in val_dataloader:
+
+        # Add batch to GPU
+        batch = tuple(t.to(device) for t in batch)
+
+        # Unpack the inputs from our dataloader
+        b_input_ids, b_input_mask, b_labels = batch
+
+        with torch.no_grad():        
+            # Forward pass, calculate logit predictions.
+            # token_type_ids is the same as the "segment ids", which 
+            # differentiates sentence 1 and 2 in 2-sentence tasks.
+            # The documentation for this `model` function is here: 
+            # https://huggingface.co/transformers/v2.2.0/model_doc/bert.html#transformers.BertForSequenceClassification
+            outputs = model(b_input_ids, 
+                            token_type_ids=None, 
+                            attention_mask=b_input_mask)
+
+        # Get the "logits" output by the model. The "logits" are the output
+        # values prior to applying an activation function like the softmax.
+        logits = outputs[0]
+
+        # Move logits and labels to CPU
+        logits = logits.detach().cpu().numpy()
+        label_ids = b_labels.to('cpu').numpy()
+
+        # Calculate the accuracy for this batch of test sentences.
+        tmp_eval_accuracy = flat_accuracy(logits, label_ids)
+
+        # Accumulate the total accuracy.
+        eval_accuracy += tmp_eval_accuracy
+
+        # Track the number of batches
+        nb_eval_steps += 1
+
+    # Report the final accuracy for this validation run.
+    print("  Accuracy: {0:.2f}".format(eval_accuracy/nb_eval_steps))
+    print("  Validation took: {:}".format(format_time(time.time() - t0)))
+
+    
     for epoch_i in range(0, epochs):
         print('======== Epoch {:} / {:} ========'.format(epoch_i + 1, epochs))
 
@@ -248,7 +305,7 @@ if __name__ == '__main__':
         eval_loss, eval_accuracy = 0, 0
         nb_eval_steps, nb_eval_examples = 0, 0
 
-        for batch in validation_dataloader:
+        for batch in val_dataloader:
             batch = tuple(t.to(device) for t in batch)
             b_input_ids, b_input_mask, b_labels = batch
 
@@ -267,4 +324,4 @@ if __name__ == '__main__':
         print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
     print("Training complete!")
-    torch.save(model.state_dict(), open(data_path+"_bert.pth", 'wb'))
+    # torch.save(model.state_dict(), open(data_path+"_bert.pth", 'wb'))
