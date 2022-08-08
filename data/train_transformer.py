@@ -151,7 +151,7 @@ def train(args):
     else:
         print("Unsupported model type, choose from ['bert', 'xlnet'], or open pull request to add further model support")
         exit(1)
-    model.cuda()
+    model.to(args.device)
 
     optimizer = AdamW(model.parameters(), lr=args.lr, eps=args.opt_eps)
     total_steps = len(train_dataloader) * args.n_epochs

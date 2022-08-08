@@ -11,6 +11,7 @@ resources/word_vectors/*
 data/*
 !data/preprocess data.ipynb
 !data/train_transformer.py
+!data/train_LSTM.py
 
 # pycache + pycharm + notebook checkpoints
 **/__pycache__
