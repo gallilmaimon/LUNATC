@@ -5,8 +5,9 @@ import numpy as np
 import time
 import datetime
 from sklearn.model_selection import train_test_split
-from transformers import BertTokenizer
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
+import torch.nn.functional as F
+from transformers import BertTokenizer
 from transformers import BertForSequenceClassification, AdamW, BertConfig
 from transformers import get_linear_schedule_with_warmup
 
@@ -17,6 +18,7 @@ LIB_DIR = os.path.abspath(__file__).split('data')[0]
 sys.path.insert(1, LIB_DIR)
 
 from src.Attacks.utils.optim_utils import seed_everything
+import src.TextModels.Bert as Bert
 
 
 def format_time(elapsed):
@@ -72,24 +74,13 @@ def calc_attention_mask(input_ids):
     return attention_masks
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', default='train', help='Whether to train or inference in [\'train\', \'infer\']')
-    parser.add_argument('--data_path', default='data/aclImdb/imdb', help='Path to data')
-    parser.add_argument('--device', default='cuda:0', help='Device to run on')
-    parser.add_argument('--seed', default=42, help='random seed, use -1 for non-determinism')
-    parser.add_argument('--batch_size', default=16, help='batch size for train and inference')
-    parser.add_argument('--lr', default=2e-5, help='initial learning rate of the AdamW optimiser')
-    parser.add_argument('--opt_eps', default=1e-8, help='Epsilon for the AdamW parameter')
-    parser.add_argument('--n_epochs', default=2, help='number of training epochs')
-    parser.add_argument('--n_classes', default=2, help='number of target classes')
-    parser.add_argument('--val_size', default=.1, help='relative size of the validation from the train set')
-    parser.add_argument('--seq_len', default=256, help='The number of tokens to enter the model')
+def batch(iterable, n=1):
+    l = len(iterable)
+    for ndx in range(0, l, n):
+        yield ndx, iterable[ndx:min(ndx + n, l)]
 
-    opt_eps = 1e-8
 
-    seed_everything(args.seed)
-    
+def train(args):
     df = pd.read_csv(args.data_path+"_train_clean.csv")
     df_train, df_validation = train_test_split(df, test_size=args.val_size, random_state=args.seed)
     df_test = pd.read_csv(args.data_path+"_test_clean.csv")
@@ -151,7 +142,7 @@ if __name__ == '__main__':
     optimizer = AdamW(model.parameters(), lr=args.lr, eps=args.opt_eps)
     total_steps = len(train_dataloader) * args.n_epochs
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
-    
+
     # evaluation only - to make sure that accuracy is more or less random at the beginning
     print("Running Validation...")
     t0 = time.time()
@@ -164,7 +155,7 @@ if __name__ == '__main__':
         batch = tuple(t.to(args.device) for t in batch)
         b_input_ids, b_input_mask, b_labels = batch
 
-        with torch.no_grad():        
+        with torch.no_grad():
             outputs = model(b_input_ids, token_type_ids=None,attention_mask=b_input_mask)
 
         logits = outputs[0]
@@ -237,4 +228,54 @@ if __name__ == '__main__':
         print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
     print("Training complete!")
-    # torch.save(model.state_dict(), open(args.data_path+"_bert.pth", 'wb'))
+    torch.save(model.state_dict(), open(args.data_path+"_bert.pth", 'wb'))
+
+
+def infer(args):
+    model_path = args.data_path + '_bert.pth'
+    tst_path = args.data_path + '_test_clean.csv'
+    out_path = args.data_path + '_test_pred_bert.csv'
+
+    # read the dataset
+    tst_df = pd.read_csv(tst_path)
+    # used for 2 text tasks like NLI
+    if "content2" in tst_df.columns:
+        tst_df["content"] = list(zip(tst_df.content, tst_df.content2))
+        tst_df = tst_df.drop("content2", 1)
+
+    code_model = Bert.BertTextModel(num_classes=args.n_classes, trained_model=model_path)
+
+    code_preds = []
+    for i, text in batch(tst_df.content.values.tolist(), args.batch_size):
+        print(f'\r{i/len(tst_df)}', end='')
+        if type(text[0]) == tuple:
+            text = tuple(zip(*text))
+        code_preds.append(code_model.predict(text))
+    tst_df['preds'] = np.concatenate(code_preds)
+
+    print('Model test accuracy is: ', (tst_df.preds == tst_df.label).mean())
+    # save result
+    tst_df.to_csv(out_path, index=False)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', default='train', help='Whether to train or inference in [\'train\', \'infer\']')
+    parser.add_argument('--data_path', default='data/aclImdb/imdb', help='Path to data')
+    parser.add_argument('--device', default='cuda:0', help='Device to run on')
+    parser.add_argument('--seed', default=42, help='random seed, use -1 for non-determinism')
+    parser.add_argument('--batch_size', default=16, help='batch size for train and inference')
+    parser.add_argument('--lr', default=2e-5, help='initial learning rate of the AdamW optimiser')
+    parser.add_argument('--opt_eps', default=1e-8, help='Epsilon for the AdamW parameter')
+    parser.add_argument('--n_epochs', default=2, help='number of training epochs')
+    parser.add_argument('--n_classes', default=2, help='number of target classes')
+    parser.add_argument('--val_size', default=.1, help='relative size of the validation from the train set')
+    parser.add_argument('--seq_len', default=256, help='The number of tokens to enter the model')
+    args = parser.parse_args()
+
+    seed_everything(args.seed)
+
+    if args.mode == 'train':
+        train(args)
+    elif args.mode == 'infer':
+        infer(args)
