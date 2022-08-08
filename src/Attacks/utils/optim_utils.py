@@ -5,6 +5,8 @@ import os
 
 
 def seed_everything(seed=42):
+    if seed == -1:
+        return
     random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
