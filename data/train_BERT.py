@@ -58,8 +58,8 @@ def tokenise_texts(tokeniser, texts):
     out = []
 
     for text in texts:
-        encoded = tokeniser.encode(*sent, add_special_tokens=True) if type(sent) == tuple \
-            else tokeniser.encode(sent, add_special_tokens=True)
+        encoded = tokeniser.encode(*text, add_special_tokens=True) if type(text) == tuple \
+            else tokeniser.encode(text, add_special_tokens=True)
         out.append(encoded)
     return out
 
@@ -69,7 +69,7 @@ def calc_attention_mask(input_ids):
 
     # For each sentence...
     for ids in input_ids:
-        att_mask = [int(token_id > 0) for token_id in sent]
+        att_mask = [int(token_id > 0) for token_id in ids]
         attention_masks.append(att_mask)
     return attention_masks
 
@@ -253,7 +253,7 @@ def infer(args):
         code_preds.append(code_model.predict(text))
     tst_df['preds'] = np.concatenate(code_preds)
 
-    print('Model test accuracy is: ', (tst_df.preds == tst_df.label).mean())
+    print('\nModel test accuracy is: ', (tst_df.preds == tst_df.label).mean())
     # save result
     tst_df.to_csv(out_path, index=False)
 
@@ -263,14 +263,14 @@ if __name__ == '__main__':
     parser.add_argument('--mode', default='train', help='Whether to train or inference in [\'train\', \'infer\']')
     parser.add_argument('--data_path', default='data/aclImdb/imdb', help='Path to data')
     parser.add_argument('--device', default='cuda:0', help='Device to run on')
-    parser.add_argument('--seed', default=42, help='random seed, use -1 for non-determinism')
-    parser.add_argument('--batch_size', default=16, help='batch size for train and inference')
-    parser.add_argument('--lr', default=2e-5, help='initial learning rate of the AdamW optimiser')
-    parser.add_argument('--opt_eps', default=1e-8, help='Epsilon for the AdamW parameter')
-    parser.add_argument('--n_epochs', default=2, help='number of training epochs')
-    parser.add_argument('--n_classes', default=2, help='number of target classes')
-    parser.add_argument('--val_size', default=.1, help='relative size of the validation from the train set')
-    parser.add_argument('--seq_len', default=256, help='The number of tokens to enter the model')
+    parser.add_argument('--seed', type=int, default=42, help='random seed, use -1 for non-determinism')
+    parser.add_argument('--batch_size', type=int, default=16, help='batch size for train and inference')
+    parser.add_argument('--lr', type=float, default=2e-5, help='initial learning rate of the AdamW optimiser')
+    parser.add_argument('--opt_eps', type=float, default=1e-8, help='Epsilon for the AdamW parameter')
+    parser.add_argument('--n_epochs', type=int, default=2, help='number of training epochs')
+    parser.add_argument('--n_classes', type=int, default=2, help='number of target classes')
+    parser.add_argument('--val_size', type=float, default=.1, help='relative size of the validation from the train set')
+    parser.add_argument('--seq_len', type=int, default=256, help='The number of tokens to enter the model')
     args = parser.parse_args()
 
     seed_everything(args.seed)
