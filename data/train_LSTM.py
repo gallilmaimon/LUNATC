@@ -25,7 +25,7 @@ def pad_sequences(inp, maxlen, token=0):
         return inp + [token]*(maxlen - len(inp))
 
 
-def val_metrics(model, dataloader, device):
+def val_metrics(model, dataloader, device, criterion):
     running_accuracy = 0.0
     running_loss = 0.0
     for i, data in enumerate(dataloader, 0):
@@ -137,15 +137,15 @@ def train(args, model, words):
                 print('[%d, %5d] accuracy: %.3f' % (epoch + 1, i + 1, running_accuracy / n))
                 running_accuracy = 0.0
 
-        val_metrics(model, dataloader_val, args.device)
+        val_metrics(model, dataloader_val, args.device, criterion)
 
     torch.save(model.state_dict(), open(args.data_path+'_word_lstm.pth', 'wb'))
 
 
 def infer(args, model, words):
-    model_path = args.base_path + '_word_lstm.pth'
-    tst_path = args.base_path + '_test_clean.csv'
-    out_path = args.base_path + '_test_pred_lstm.csv'
+    model_path = args.data_path + '_word_lstm.pth'
+    tst_path = args.data_path + '_test_clean.csv'
+    out_path = args.data_path + '_test_pred_lstm.csv'
 
     model.load_state_dict(torch.load(model_path))
 
@@ -173,6 +173,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default='train', help='Whether to train or inference in [\'train\', \'infer\']')
     parser.add_argument('--data_path', default='data/aclImdb/imdb', help='Path to data')
+    parser.add_argument('--embedding_path', default='resources/word_vectors/glove.6B.200d.txt', help='Path to data')
     parser.add_argument('--device', default='cuda:0', help='Device to run on')
     parser.add_argument('--seed', type=int, default=42, help='random seed, use -1 for non-determinism')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size for train and inference')
