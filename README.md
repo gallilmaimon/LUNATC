@@ -25,7 +25,7 @@ We report the accuracy of each model on the preprocessed test set, however the d
 | Dataset\Classifier      | BERT                                | Word-LSTM                           |
 | :-----------------------|:----------------------------------  | :-----------------------------------|
 |                         | **Accuracy, model link, data link** | **Accuracy, model link, data link** |
-| IMDB (aclImdb)          | 93.98, model, data                  |  85.70, model, data                 |
+| IMDB (aclImdb)          | 93.98, [model](https://drive.google.com/file/d/1MtEzBmLmSn4ad-EefalzBOYyZZzltq71/view?usp=sharing), data                  |  85.70, model, data                 |
 | Toxic-Wikipedia (toxic) | 91.80, model, data                  |  92.77, model, data                 |
 | Pubmed (pubmed)         | 96.75, model, data                  |  95.71, model, data                 |
 | MNLI (mnli)             | 83.72, model, data                  | -                                   |
