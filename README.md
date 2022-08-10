@@ -26,8 +26,8 @@ We report the accuracy of each model on the preprocessed test set, however the d
 | :-----------------------|:----------------------------------  | :-----------------------------------|
 |                         | **Accuracy, model link, data link** | **Accuracy, model link, data link** |
 | IMDB (aclImdb)          | 93.98, model, data                  |  85.70, model, data                 |
-| Toxic-Wikipedia (toxic) | 91.80, model, data                  |  ?    , model, data                 |
-| Pubmed (pubmed)         | ?, model, data                      |  95.71, model, data                 |
+| Toxic-Wikipedia (toxic) | 91.80, model, data                  |  92.77, model, data                 |
+| Pubmed (pubmed)         | 96.75, model, data                  |  95.71, model, data                 |
 | MNLI (mnli)             | 83.72, model, data                  | -                                   |
 
 
