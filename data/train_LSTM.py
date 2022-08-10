@@ -99,7 +99,6 @@ class WordLSTM(nn.Module):
 def train(args, model, words):
     df_train = pd.read_csv(args.data_path+"_train_clean.csv")
     df_train, df_val = train_test_split(df_train, test_size=args.val_size)
-    df_test = pd.read_csv(args.data_path+"_test_clean.csv")
 
     dataset_train = wordLSTMDataset(words, df_train, maxlen=args.seq_len)
     dataset_val = wordLSTMDataset(words, df_val, maxlen=args.seq_len)

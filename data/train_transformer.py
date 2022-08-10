@@ -84,7 +84,6 @@ def batch(iterable, n=1):
 def train(args):
     df = pd.read_csv(args.data_path+"_train_clean.csv")
     df_train, df_validation = train_test_split(df, test_size=args.val_size, random_state=args.seed)
-    df_test = pd.read_csv(args.data_path+"_test_clean.csv")
 
     # used for 2 text tasks like NLI
     if "content2" in df_train.columns:
@@ -92,8 +91,6 @@ def train(args):
         df_train = df_train.drop("content2", 1)
         df_validation["content"] = list(zip(df_validation.content, df_validation.content2))
         df_validation = df_validation.drop("content2", 1)
-        df_test["content"] = list(zip(df_test.content, df_test.content2))
-        df_test = df_test.drop("content2", 1)
 
     # Get the lists of sentences and their labels.
     sentences_train = df_train.content.values
@@ -101,9 +98,6 @@ def train(args):
 
     sentences_validation = df_validation.content.values
     val_labels = df_validation.label.values
-
-    sentences_test = df_test.content.values
-    test_labels = df_test.label.values
 
     if args.model == 'bert':
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
@@ -117,7 +111,6 @@ def train(args):
     # Tokenize all sentences and map the tokens to their word IDs.
     train_inputs = tokenise_texts(tokenizer, sentences_train)
     val_inputs = tokenise_texts(tokenizer, sentences_validation)
-    test_inputs = tokenise_texts(tokenizer, sentences_test)
 
     # Set the maximum sequence length.
     print('Padding/truncating all texts to %d values...' % args.seq_len)
@@ -125,22 +118,19 @@ def train(args):
     # Pad our input tokens with value 0.
     train_inputs = pad_sequences(train_inputs, maxlen=args.seq_len)
     val_inputs = pad_sequences(val_inputs, maxlen=args.seq_len)
-    test_inputs = pad_sequences(test_inputs, maxlen=args.seq_len)
 
     # In newer version this is built into the tokeniser and can be replaced
     train_masks = calc_attention_mask(train_inputs)
     val_masks = calc_attention_mask(val_inputs)
-    test_masks = calc_attention_mask(test_inputs)
 
     # Convert all inputs and labels into torch tensors
-    train_inputs, val_inputs, test_inputs = torch.tensor(train_inputs), torch.tensor(val_inputs), torch.tensor(test_inputs)
-    train_labels, val_labels, test_labels = torch.tensor(train_labels), torch.tensor(val_labels), torch.tensor(test_labels)
-    train_masks, val_masks, test_masks = torch.tensor(train_masks), torch.tensor(val_masks), torch.tensor(test_masks)
+    train_inputs, val_inputs = torch.tensor(train_inputs), torch.tensor(val_inputs)
+    train_labels, val_labels = torch.tensor(train_labels), torch.tensor(val_labels)
+    train_masks, val_masks = torch.tensor(train_masks), torch.tensor(val_masks)
 
     # Create the DataLoader for our training set.
     train_dataloader = create_dl(train_inputs, train_masks, train_labels, False, args.batch_size)
     val_dataloader = create_dl(val_inputs, val_masks, val_labels, True, args.batch_size)
-    test_dataloader = create_dl(test_inputs, test_masks, test_labels, True, args.batch_size)
 
     if args.model == 'bert':
         model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=args.n_classes,

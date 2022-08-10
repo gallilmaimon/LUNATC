@@ -24,3 +24,7 @@ data/*
 
 # playground notebook
 nlp_playground.ipynb
+
+# slurm
+*.out
+sbatch.example
