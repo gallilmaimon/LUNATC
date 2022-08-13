@@ -36,7 +36,7 @@ if os.path.exists(LIB_DIR + "/resources/tf_hub_modules/USE"):
 else:
     print("Warning! local version of Universal Sentence Encoder model was not found trying to download. This may cause"
           "problems in runtime!")
-    embed = hub.Module("https://tfhub.dev/google/universal-sentence-encoder/3")
+    embed = hub.Module("https://tfhub.dev/google/universal-sentence-encoder/2")
 # synonym word embeddings
 word_vectors = KeyedVectors.load_word2vec_format(LIB_DIR +
                                                  "/resources/word_vectors/counter-fitted-vectors_formatted.txt",
@@ -694,8 +694,11 @@ def replace_with_synonym_greedy(text, word_index, text_model, sess, topn=50, wor
     all_words = text.split()
     for opt in rep_options:
         all_words[word_index] = opt
-        sent_options.append((text1, ' '.join(all_words)))
-
+        if text1 is None:
+            sent_options.append(' '.join(all_words))            
+        else:
+            sent_options.append((text1, ' '.join(all_words)))
+        
     if cand_mask.sum() == 1:
         synonym_act_dict[(orig, int(word_index))] = [i for (i, v) in zip(sent_options, cand_mask) if v][0]
         return [i for (i, v) in zip(sent_options, cand_mask) if v][0]
