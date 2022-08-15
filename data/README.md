@@ -8,6 +8,8 @@ This README file describes the different ways to download all the datasets descr
 
 3) PUBMED - this is a newly introduced dataset, available for download at the following [link](bla). This can also be parsed from scratch based on the raw pubmed XMLs, however parsing the entire dataset from the raw files is compute intensive, and requires large storage. If you wish to reproduce it, or update it - download the new xmls from pubmed.
 
+4) MNLI - download from this official [link](https://cims.nyu.edu/~sbowman/multinli/multinli_1.0.zip), and extract the zip into data/mnli folder.
+
 ### Preprocessing the texts, and training the model:
 - The [data/preprocess-data](https://github.com/gallilmaimon/LUNATC/blob/master/data/preprocess%20data.ipynb) shows how to get from each of the datasets downloaded to a single format suitable for training a BERT or word-LSTM classifier. This is made of 2 csv files (train and test) with 2 columns: 'content' - for the text, and 'label' for an int value for the true class.
 
