@@ -67,7 +67,8 @@ To evaluate the different approaches, use the [analyse experiments notebook](htt
 ## Citation
 If you found this work useful, please cite the following related article:
 
-```@article{MAIMON2022282,
+```
+@article{MAIMON2022282,
 title = {A universal adversarial policy for text classifiers},
 journal = {Neural Networks},
 volume = {153},
