@@ -25,10 +25,10 @@ We report the accuracy of each model on the preprocessed test set, however the d
 | Dataset\Classifier      | BERT                                | Word-LSTM                           |
 | :-----------------------|:----------------------------------  | :-----------------------------------|
 |                         | **Accuracy, model link, data link** | **Accuracy, model link, data link** |
-| IMDB (aclImdb)          | 93.98, [model](https://drive.google.com/file/d/1MtEzBmLmSn4ad-EefalzBOYyZZzltq71/view?usp=sharing), data                  |  85.70, model, data                 |
-| Toxic-Wikipedia (toxic) | 91.80, model, data                  |  92.77, model, data                 |
-| Pubmed (pubmed)         | 96.75, model, data                  |  95.71, model, data                 |
-| MNLI (mnli)             | 83.72, model, data                  | -                                   |
+| IMDB (aclImdb)          | 93.98, [model](https://drive.google.com/file/d/1MtEzBmLmSn4ad-EefalzBOYyZZzltq71/view?usp=sharing), [data](https://drive.google.com/file/d/1TrpBUjGJVkObN8ktaKR2XLCXU1QkyHay/view?usp=sharing)                  |  85.70, [model](https://drive.google.com/file/d/1VQnW5uDhFGgHHj1BB4Iazt5evA_EnSRL/view?usp=sharing), [data](https://drive.google.com/file/d/1Hg-M4xmfkZ_RYVkNI9J5mgdezS2WQjZI/view?usp=sharing)                 |
+| Toxic-Wikipedia (toxic) | 91.80, [model](https://drive.google.com/file/d/18NvVtoQovvzY5VKepIPUBje6ApcT1rqD/view?usp=sharing), [data](https://drive.google.com/file/d/1B6TxIZPlA19tVwkq6aF4WtjUPP2ZjMNr/view?usp=sharing)                  |  92.77, [model](https://drive.google.com/file/d/14qvEc34t_1iMNoATBGRFPF3OFyLR7qIK/view?usp=sharing), [data](https://drive.google.com/file/d/16s5bSRklIWKGCuEeG1rzcS6LGIM17cYo/view?usp=sharing)                 |
+| Pubmed (pubmed)         | 96.75, [model](https://drive.google.com/file/d/1jvSXDL_TXqNEJqesh-0DA8cYArcz8rLz/view?usp=sharing), [data](https://drive.google.com/file/d/1y79fZv8cnq15ITVAHdJH-ZSbk8xlqJoT/view?usp=sharing)                  |  95.71, [model](https://drive.google.com/file/d/1-6BwUbAe6Ovx4OPa9HWvO4v-HacWNlpt/view?usp=sharing), [data](https://drive.google.com/file/d/1H-4jQpQ2Ei66GiwA5ow9iQoJq4-YLSnp/view?usp=sharing)                 |
+| MNLI (mnli)             | 83.72, [model](https://drive.google.com/file/d/176MzUES9ltMGGaEoWYC4_CVt_gF1_rac/view?usp=sharing), [data](https://drive.google.com/file/d/1iMA13MEFPkAOeYgtgbUEYEQkpjPo5TqG/view?usp=sharing)                  | -                                   |
 
 
 * For training from scratch, switching classifiers, using new datasets, changing data preprocess or anything else like that, see the following readme [data/README.md](https://github.com/gallilmaimon/LUNATC/blob/master/data/README.md).
