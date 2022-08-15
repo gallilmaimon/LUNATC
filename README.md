@@ -34,7 +34,32 @@ We report the accuracy of each model on the preprocessed test set, however the d
 * For training from scratch, switching classifiers, using new datasets, changing data preprocess or anything else like that, see the following readme [data/README.md](https://github.com/gallilmaimon/LUNATC/blob/master/data/README.md).
 
 ## Performing the attacks
+We focus on the attacks described in the paper, though genetic attacks and other variants of existing attacks are also supported.
 ### Baselines
+- **Textfooler**: In order to attack using our implementation of textfooler (with the similarity threshold of tf-adjusted), use the following script:
+```
+python src/Attacks/textfooler_attack.py
+```
+\* Note that, you can manually change the similarity threshold to match the original paper within the code.
+
+- **PWWS (ours)**: In order to attack using our implementation of PWWS, which uses the same actions as Textfooler, but uses the PWWS heuristic to choose the action order, use the same script. __But first__, change within the file: attack_type = 'pwws'.
+```
+python src/Attacks/textfooler_attack.py
+```
+
+- **PWWS (original)**: In order to attack with the original pwws, run:
+```
+python src/Attacks/pwws_attack.py
+```
+\* Note that the use of Named Entity replacement action can be switched off from within the code.
+
+- **Simple Search**: In order to attack using the simple search baseline, follow these commands (and manual updates to the dataset and indices):
+```
+cp src/Config/constants_search.yml src/Config/constants.yml
+# Manually update data path and indices to attack (in order to only attack those of interest or split for different compute nodes)
+# Run the attack
+python src/Attacks/pwws_attack.py
+```
 
 ### LUNATC
 To attack using LUNATC described in the paper, change the [configuration file](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/DQN_constants.yml) according to the following table, and the dataset (indicated by the base path), and the indices (based on the previous section). Seeds used are 42, 43, 44. Model type depends on the attacked model. Other fields should remain the same as original.
@@ -50,11 +75,17 @@ To attack using LUNATC described in the paper, change the [configuration file](h
 
 Afterwards run this command:
 ```LUNATC universal attack
-python LUNATC/src/Attacks/DQN_attack.py 
+python src/Attacks/DQN_attack.py 
 ```
 
 To attack using Genfooler variants use the following [script](https://github.com/gallilmaimon/LUNATC/blob/master/src/Attacks/genfooler_attack.py).
 The results for Random, PWWS, Textfooler were already acheived in the previous section.
+
+### GenFooler
+This baseline for the universal setup is also availble to run. First, change the parameters within the main function to point to your wished dataset, model type and attack type generalising ('tf' or 'pwws'). The default parameters match those used to get the results in the paper. Then run:
+```
+python src/Attacks/DQN_attack.py
+```
 
 ## Evaluation
 
