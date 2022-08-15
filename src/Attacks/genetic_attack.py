@@ -60,7 +60,7 @@ def attack_sent(sent: str, text_model: TextModel, sess: tf.Session, pop_size: in
 
 if __name__ == '__main__':
     # constants
-    cfg = Config(LIB_DIR + "src/Config/DQN_constants.yml")
+    cfg = Config(LIB_DIR + "src/Config/constants.yml")
     base_path = cfg.params["base_path"]
     MAX_TURNS = cfg.params["MAX_TURNS"]
     model_type = cfg.params["MODEL_TYPE"]

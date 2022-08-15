@@ -24,7 +24,7 @@ from src.Attacks.Agents.Memory.PrioritisedMemory import PrioritisedMemory
 from src.Config.Config import Config
 
 # region constants
-cfg = Config(LIB_DIR + "src/Config/DQN_constants.yml")
+cfg = Config(LIB_DIR + "src/Config/constants.yml")
 base_path = cfg.params["base_path"]
 # endregion constants
 

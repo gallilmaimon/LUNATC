@@ -23,7 +23,7 @@ from src.Attacks.utils.optim_utils import seed_everything
 from src.Config.Config import Config
 
 # region constants
-cfg = Config(LIB_DIR + "src/Config/DQN_constants.yml")
+cfg = Config(LIB_DIR + "src/Config/constants.yml")
 base_path = cfg.params["base_path"]
 # endregion constants
 
@@ -64,7 +64,7 @@ def attack_individually(model_type: str = "bert"):
 
     cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
     os.makedirs(cur_path, exist_ok=True)
-    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml", f"{cur_path}/DQN_constants.yml")
+    shutil.copyfile(LIB_DIR + "src/Config/constants.yml", f"{cur_path}/constants.yml")
     for n in eval(cfg.params['ATTACKED_INDICES']):
         seed_everything(cfg.params['SEED'])
         # get current text
@@ -158,7 +158,7 @@ def pretrain_attack_model(epoch=0, model_type: str = "bert"):
 
     cur_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
     os.makedirs(cur_path, exist_ok=True)
-    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml", f"{cur_path}/DQN_constants.yml") if epoch == 0 else ''
+    shutil.copyfile(LIB_DIR + "src/Config/constants.yml", f"{cur_path}/constants.yml") if epoch == 0 else ''
 
     # define agent
     dqn = None
@@ -221,7 +221,7 @@ def test_trained_model(model_type: str = "bert", epoch: int = 0):
     general_path = f"{base_path}_{cfg.params['AGENT_TYPE']}_results"
     cur_path = general_path + f"/attack_{epoch}"
     os.makedirs(cur_path, exist_ok=True)
-    shutil.copyfile(LIB_DIR + "src/Config/DQN_constants.yml", f"{cur_path}/DQN_constants.yml")
+    shutil.copyfile(LIB_DIR + "src/Config/constants.yml", f"{cur_path}/constants.yml")
     for n in eval(cfg.params['ATTACKED_INDICES']):
         seed_everything(cfg.params['SEED'])
         # get current text

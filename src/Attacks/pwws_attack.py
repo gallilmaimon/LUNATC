@@ -61,7 +61,7 @@ def pwws_attack_text(text: str, text_model, sess, dataset: str, use_ne: bool = F
 
 
 if __name__ == '__main__':
-    cfg = Config(LIB_DIR + "src/Config/DQN_constants.yml")
+    cfg = Config(LIB_DIR + "src/Config/constants.yml")
     base_path = cfg.params["base_path"]
     MAX_TURNS = cfg.params["MAX_TURNS"]
     model_type = cfg.params["MODEL_TYPE"]
