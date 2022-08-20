@@ -28,6 +28,7 @@ import nlpaug.model.word_dict as nmwd
 import random
 
 LIB_DIR = os.path.abspath(__file__).split('src')[0]
+print(LIB_DIR)
 
 # region Constants ###################
 # the Universal Sentence Encoder's TF Hub module
