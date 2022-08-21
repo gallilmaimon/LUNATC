@@ -70,7 +70,7 @@ python src/Attacks/genfooler_attack.py
 ```
 
 ### LUNATC
-To attack using LUNATC described in the paper, copy contents of [constants_LUNATC.yml](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/constants_LUNATC.yml) to [constants.yml](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/constants.yml). Afterwards update the dataset (indicated by the base path), the indices (based on those clculated in the previous section). Finally, update the parameters in the config according to the following table. Seeds used are 42, 43, 44. Model type depends on the attacked model. Other fields should remain the same.
+To attack using LUNATC described in the paper, first train the agent by copying contents of [constants_lunatc_train.yml](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/constants_lunatc_train.yml) to [constants.yml](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/constants.yml). Afterwards update the dataset (indicated by the base path), the indices (based on those clculated in the previous section). Finally, update the parameters in the config according to the following table. Seeds used are 42, 43, 44. Model type depends on the attacked model. Other fields should remain the same.
 
 | Parameter\Train Size | 500       | 750   | 950   | 25k   | 50k   |
 | :--------------------|:----------| :-----| :-----| :-----| :-----|
@@ -81,10 +81,16 @@ To attack using LUNATC described in the paper, copy contents of [constants_LUNAT
 | Num Rounds (in code) | 2         |    4  |  4    | 3     | 1     |
 
 
-Afterwards run this command:
+Afterwards run this command, in order to train:
 ```LUNATC universal attack
 python src/Attacks/DQN_attack.py 
 ```
+
+After that perform the attack by inferncing with the trained model - copy contents of [constants_lunatc_test.yml](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/constants_lunatc_test.yml) to [constants.yml](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/constants.yml), update data  path and indices. Finally, run: 
+```LUNATC universal attack
+python src/Attacks/DQN_attack.py 
+```
+
 
 ## Evaluation
 
