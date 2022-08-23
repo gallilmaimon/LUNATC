@@ -6,7 +6,7 @@ This README file describes the different ways to download all the datasets descr
 
 2) Toxic-Wikipedia - download test_labels.csv.zip, test.csv.zip, train.csv.zip from [here](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data), and extract them in the data/toxic folder.
 
-3) PUBMED - this is a newly introduced dataset, available for download at the following [link](bla). This can also be parsed from scratch based on the raw pubmed XMLs, however parsing the entire dataset from the raw files is compute intensive, and requires large storage. If you wish to reproduce it, or update it - download the new xmls from pubmed.
+3) PUBMED - this is a newly introduced dataset, available for download at the following [link](https://drive.google.com/file/d/1PsyvFw-99zm_CUDlUSOdglXfL8rTmOPv/view?usp=sharing). This can also be parsed from scratch based on the raw pubmed XMLs, however parsing the entire dataset from the raw files is compute intensive, and requires large storage. If you wish to reproduce it, or update it - download the new xmls from pubmed.
 
 4) MNLI - download from this official [link](https://cims.nyu.edu/~sbowman/multinli/multinli_1.0.zip), and extract the zip into data/mnli folder.
 
