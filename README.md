@@ -2,6 +2,8 @@
 
 This repository is the official implementation of LUNATC from "A Universal Adversarial Policy for Text Classifiers". https://doi.org/10.1016/j.neunet.2022.06.018 
 
+![universal adversarial policy overview](https://github.com/gallilmaimon/LUNATC/blob/master/images/universal_comparison.png)
+
 ## Setup
 
 1) create an environment:
