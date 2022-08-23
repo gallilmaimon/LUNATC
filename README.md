@@ -2,12 +2,13 @@
 
 This repository is the official implementation of LUNATC from "A Universal Adversarial Policy for Text Classifiers". https://doi.org/10.1016/j.neunet.2022.06.018 
 
+![arxiv](https://img.shields.io/badge/arxiv-2206.09458-darkgreen.svg)
 ![universal adversarial policy overview](https://github.com/gallilmaimon/LUNATC/blob/master/images/universal_comparison.png)
 
 ## Setup
 
 1) create an environment:
-- This git was tested using python 3.7 and cuda 10.2, other versions may require some adjustments.
+- This git was tested using ![python 3.7](https://img.shields.io/badge/python-=3.7-blue.svg) and ![cuda 10.2](https://img.shields.io/badge/cuda-=10.2-bluegreen.svg), other versions may require some adjustments.
 - We recommend using a virtual environment.
 - Install the required depenedencies based on the given [requirements.txt](https://github.com/gallilmaimon/LUNATC/blob/master/requirements.txt):
 ```
