@@ -22,6 +22,7 @@ data/*
 # images
 *.png
 *.PNG
+!images/universal_comparison.png
 
 # playground notebook
 nlp_playground.ipynb
