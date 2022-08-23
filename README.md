@@ -35,7 +35,7 @@ We report the accuracy of each model on the preprocessed test set, however the d
 
 ## Performing the attacks
 We focus on the attacks described in the paper, though genetic attacks and other variants of existing attacks are also supported.
-### Baselines
+### Non-Universal Baselines
 - **Textfooler**: In order to attack using our implementation of textfooler (with the similarity threshold of tf-adjusted), use the following script:
 ```
 python src/Attacks/textfooler_attack.py
@@ -54,15 +54,23 @@ python src/Attacks/pwws_attack.py
 \* Note that the use of Named Entity replacement action can be switched off from within the code.
 
 - **Simple Search**: In order to attack using the simple search baseline, follow these commands (and manual updates to the dataset and indices):
+
+\* __Note!__ - that this baseline is used to calculate indices, not as "Simple Search" in results! to reach that, change num_rounds in the config file to 1.
 ```
 cp src/Config/constants_search.yml src/Config/constants.yml
 # Manually update data path and indices to attack (in order to only attack those of interest or split for different compute nodes)
 # Run the attack
-python src/Attacks/pwws_attack.py
+python src/Attacks/DQN_attack.py
+```
+
+### GenFooler
+This universal baseline is also availble to run. First, change the parameters within the main function to point to your wished dataset, model type and attack type generalising ('tf' or 'pwws'). The default parameters match those used to get the results in the paper. Then run:
+```
+python src/Attacks/genfooler_attack.py
 ```
 
 ### LUNATC
-To attack using LUNATC described in the paper, change the [configuration file](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/DQN_constants.yml) according to the following table, and the dataset (indicated by the base path), and the indices (based on the previous section). Seeds used are 42, 43, 44. Model type depends on the attacked model. Other fields should remain the same as original.
+To attack using LUNATC described in the paper, first train the agent by copying contents of [constants_lunatc_train.yml](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/constants_lunatc_train.yml) to [constants.yml](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/constants.yml). Afterwards update the dataset (indicated by the base path), the indices (based on those clculated in the previous section). Finally, update the parameters in the config according to the following table. Seeds used are 42, 43, 44. Model type depends on the attacked model. Other fields should remain the same.
 
 | Parameter\Train Size | 500       | 750   | 950   | 25k   | 50k   |
 | :--------------------|:----------| :-----| :-----| :-----| :-----|
@@ -73,27 +81,20 @@ To attack using LUNATC described in the paper, change the [configuration file](h
 | Num Rounds (in code) | 2         |    4  |  4    | 3     | 1     |
 
 
-Afterwards run this command:
+Afterwards run this command, in order to train:
 ```LUNATC universal attack
 python src/Attacks/DQN_attack.py 
 ```
 
-To attack using Genfooler variants use the following [script](https://github.com/gallilmaimon/LUNATC/blob/master/src/Attacks/genfooler_attack.py).
-The results for Random, PWWS, Textfooler were already acheived in the previous section.
+After that perform the attack by inferncing with the trained model - copy contents of [constants_lunatc_test.yml](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/constants_lunatc_test.yml) to [constants.yml](https://github.com/gallilmaimon/LUNATC/blob/master/src/Config/constants.yml), update data  path and indices. Finally, run: 
+```LUNATC universal attack
+python src/Attacks/DQN_attack.py 
+```
 
-### GenFooler
-This baseline for the universal setup is also availble to run. First, change the parameters within the main function to point to your wished dataset, model type and attack type generalising ('tf' or 'pwws'). The default parameters match those used to get the results in the paper. Then run:
-```
-python src/Attacks/DQN_attack.py
-```
 
 ## Evaluation
 
-To evaluate the different approaches, use the [analyse experiments notebook](https://github.com/gallilmaimon/LUNATC/blob/master/analyse%20experiments.ipynb).
-- For analysing the individual attacks seperately look at the "single sentence evaluation" section
-- For analysing statistics of the individual attacks look at "multiple sentence evaluation" section
-- For analysing the universal policy look at the "train test evaluation" section, it shows how to calculate all the graphs showed in the paper.
-
+To evaluate the baselines' attack success rate and oracle access, use [Analysis.ipynb](https://github.com/gallilmaimon/LUNATC/blob/master/Analysis.ipynb). It can be used to calculate the success rate and oracle access of all the models in the paper, thus allowing to recreate all results from the paper.
 
 ## Citation
 If you found this work useful, please cite the following related article:
